@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('EISwebsite', '0008_employee_alter_attendance_status'),
+        ('EMSwebsite', '0008_employee_alter_attendance_status'),
     ]
 
     operations = [
@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
                 ('label', models.CharField(max_length=255)),
                 ('file', models.FileField(upload_to='employee_documents/additional/')),
                 ('uploaded_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='additional_documents', to='EISwebsite.employees')),
+                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='additional_documents', to='EMSwebsite.employees')),
             ],
             options={
                 'verbose_name': 'Additional Document',

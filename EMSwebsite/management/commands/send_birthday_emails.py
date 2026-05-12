@@ -11,7 +11,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
 from datetime import date
-from EISwebsite.models import Employees
+from EMSwebsite.models import Employees
 
 
 class Command(BaseCommand):

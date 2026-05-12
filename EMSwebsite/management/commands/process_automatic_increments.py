@@ -15,11 +15,11 @@ from django.utils import timezone
 from django.db import transaction
 from datetime import date, timedelta
 from decimal import Decimal
-from EISwebsite.models import (
+from EMSwebsite.models import (
     Employees, SalaryIncrement, IncrementSettings, Notification, UserProfile
 )
 from django.contrib.auth.models import User
-from EISwebsite.utils.increment_notifications import send_increment_notifications
+from EMSwebsite.utils.increment_notifications import send_increment_notifications
 
 
 class Command(BaseCommand):

@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('EISwebsite', '0002_employees_profile_submitted'),
+        ('EMSwebsite', '0002_employees_profile_submitted'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
                 ('completed_at', models.DateTimeField(blank=True, null=True)),
                 ('notes', models.TextField(blank=True, null=True)),
                 ('initiated_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='disbursements_initiated', to=settings.AUTH_USER_MODEL)),
-                ('payroll', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='disbursements', to='EISwebsite.payroll')),
+                ('payroll', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='disbursements', to='EMSwebsite.payroll')),
             ],
             options={
                 'ordering': ['-initiated_at'],
@@ -55,9 +55,9 @@ class Migration(migrations.Migration):
                 ('error_message', models.TextField(blank=True, null=True)),
                 ('bank_response', models.JSONField(blank=True, null=True)),
                 ('processed_at', models.DateTimeField(blank=True, null=True)),
-                ('disbursement', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='payment_records', to='EISwebsite.salarydisbursement')),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='EISwebsite.employees')),
-                ('payroll_record', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='disbursement_records', to='EISwebsite.payrollrecord')),
+                ('disbursement', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='payment_records', to='EMSwebsite.salarydisbursement')),
+                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='EMSwebsite.employees')),
+                ('payroll_record', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='disbursement_records', to='EMSwebsite.payrollrecord')),
             ],
             options={
                 'ordering': ['-processed_at'],

@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('EISwebsite', '0016_zkdevice_enrollmentlog_attendancelog'),
+        ('EMSwebsite', '0016_zkdevice_enrollmentlog_attendancelog'),
     ]
 
     operations = [

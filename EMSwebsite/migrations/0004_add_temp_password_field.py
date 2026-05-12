@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('EISwebsite', '0003_alter_userprofile_role_salarydisbursement_and_more'),
+        ('EMSwebsite', '0003_alter_userprofile_role_salarydisbursement_and_more'),
     ]
 
     operations = [

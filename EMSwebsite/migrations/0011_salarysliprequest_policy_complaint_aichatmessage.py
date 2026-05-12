@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('EISwebsite', '0010_merge_20251208_0942'),
+        ('EMSwebsite', '0010_merge_20251208_0942'),
     ]
 
     operations = [
@@ -23,8 +23,8 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('decided_at', models.DateTimeField(blank=True, null=True)),
                 ('decided_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='salary_slip_requests_decided', to=settings.AUTH_USER_MODEL)),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='salary_slip_requests', to='EISwebsite.employees')),
-                ('payroll_record', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='salary_slip_requests', to='EISwebsite.payrollrecord')),
+                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='salary_slip_requests', to='EMSwebsite.employees')),
+                ('payroll_record', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='salary_slip_requests', to='EMSwebsite.payrollrecord')),
                 ('requested_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='salary_slip_requests_made', to=settings.AUTH_USER_MODEL)),
             ],
             options={
@@ -68,8 +68,8 @@ class Migration(migrations.Migration):
                 ('responded_at', models.DateTimeField(blank=True, null=True)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
-                ('department', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='complaints', to='EISwebsite.department')),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='complaints', to='EISwebsite.employees')),
+                ('department', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='complaints', to='EMSwebsite.department')),
+                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='complaints', to='EMSwebsite.employees')),
                 ('responded_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='responded_complaints', to=settings.AUTH_USER_MODEL)),
             ],
             options={

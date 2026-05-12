@@ -13,8 +13,8 @@ import asyncio
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.db import transaction
-from EISwebsite.models import ZKDevice, AttendanceLog
-from EISwebsite.device_utils import ZKDeviceManager, process_device_event
+from EMSwebsite.models import ZKDevice, AttendanceLog
+from EMSwebsite.device_utils import ZKDeviceManager, process_device_event
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 

@@ -4,7 +4,7 @@ Custom template tags for formatting dates and times according to system settings
 from django import template
 from django.utils import timezone
 from datetime import datetime, date, time
-from EISwebsite.models import SystemSettings
+from EMSwebsite.models import SystemSettings
 
 register = template.Library()
 

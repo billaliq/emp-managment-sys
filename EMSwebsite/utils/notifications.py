@@ -3,7 +3,7 @@ Utility functions for creating system notifications
 """
 from django.contrib.auth.models import User
 from django.utils import timezone
-from EISwebsite.models import Notification, Employees
+from EMSwebsite.models import Notification, Employees
 
 
 def create_notification(recipient, notification_type, title, message, related_object_id=None, related_object_type=None):

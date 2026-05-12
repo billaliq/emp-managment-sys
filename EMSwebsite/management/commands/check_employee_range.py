@@ -3,7 +3,7 @@ Management command to check employee ID ranges and find gaps.
 """
 from django.core.management.base import BaseCommand
 from django.db.models import Q
-from EISwebsite.models import Employees
+from EMSwebsite.models import Employees
 
 
 class Command(BaseCommand):

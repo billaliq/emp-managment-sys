@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('EISwebsite', '0011_salarysliprequest_policy_complaint_aichatmessage'),
+        ('EMSwebsite', '0011_salarysliprequest_policy_complaint_aichatmessage'),
     ]
 
     operations = [
@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Holiday',
                 'verbose_name_plural': 'Holidays',
                 'ordering': ['-start_date'],
-                'indexes': [models.Index(fields=['start_date', 'end_date'], name='EISwebsite__start_d_c29da0_idx'), models.Index(fields=['is_active'], name='EISwebsite__is_acti_2e718e_idx')],
+                'indexes': [models.Index(fields=['start_date', 'end_date'], name='EMSwebsite__start_d_c29da0_idx'), models.Index(fields=['is_active'], name='EMSwebsite__is_acti_2e718e_idx')],
             },
         ),
     ]

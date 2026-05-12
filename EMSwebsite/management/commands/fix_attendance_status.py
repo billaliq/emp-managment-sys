@@ -5,7 +5,7 @@ based on the attendance data.
 """
 from django.core.management.base import BaseCommand
 from django.db.models import Q
-from EISwebsite.models import Attendance
+from EMSwebsite.models import Attendance
 
 
 class Command(BaseCommand):

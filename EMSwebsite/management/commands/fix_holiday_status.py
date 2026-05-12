@@ -7,7 +7,7 @@ Usage: python manage.py fix_holiday_status
 """
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from EISwebsite.models import Attendance, HolidayDate
+from EMSwebsite.models import Attendance, HolidayDate
 
 
 class Command(BaseCommand):

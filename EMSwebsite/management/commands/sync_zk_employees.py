@@ -10,7 +10,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 from datetime import date
-from EISwebsite.models import Employees
+from EMSwebsite.models import Employees
 
 # Try to import ZK library
 try:

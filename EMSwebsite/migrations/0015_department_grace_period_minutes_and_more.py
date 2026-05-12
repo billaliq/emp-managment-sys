@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('EISwebsite', '0014_add_holiday_date_model'),
+        ('EMSwebsite', '0014_add_holiday_date_model'),
     ]
 
     operations = [

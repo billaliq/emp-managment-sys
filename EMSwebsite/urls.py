@@ -1,7 +1,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
-from . import forms as EISwebsite_forms
+from . import forms as EMSwebsite_forms
 from django.conf import settings
 from django.conf.urls.static import static
 from .views import *
@@ -28,7 +28,7 @@ urlpatterns = [
              success_url='/password_reset/done/',
              html_email_template_name='pages/password_reset_email.html',
              extra_email_context={'site_name': 'Employee Information System'},
-             form_class=EISwebsite_forms.CustomPasswordResetForm
+             form_class=EMSwebsite_forms.CustomPasswordResetForm
          ),
          name='password_reset'),
 

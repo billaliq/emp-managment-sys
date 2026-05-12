@@ -1,5 +1,5 @@
 """
-ASGI config for EIS project.
+ASGI config for EMS project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,9 +11,9 @@ import os
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-import EISwebsite.routing
+import EMSwebsite.routing
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'EIS.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'EMS.settings')
 
 # Initialize Django ASGI application early to ensure the AppRegistry
 # is populated before importing code that may import ORM models.
@@ -23,7 +23,7 @@ application = ProtocolTypeRouter({
     "http": django_asgi_app,
     "websocket": AuthMiddlewareStack(
         URLRouter(
-            EISwebsite.routing.websocket_urlpatterns
+            EMSwebsite.routing.websocket_urlpatterns
         )
     ),
 })

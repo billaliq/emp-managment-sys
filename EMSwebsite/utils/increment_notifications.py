@@ -5,7 +5,7 @@ Utility functions for sending increment notifications to employees, admin, and f
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
-from EISwebsite.models import Notification, UserProfile
+from EMSwebsite.models import Notification, UserProfile
 from django.contrib.auth.models import User
 
 

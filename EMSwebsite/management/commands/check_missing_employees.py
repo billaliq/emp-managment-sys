@@ -9,7 +9,7 @@ Usage:
 """
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from EISwebsite.models import Employees
+from EMSwebsite.models import Employees
 from django.utils import timezone
 
 

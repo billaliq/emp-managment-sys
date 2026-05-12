@@ -8,7 +8,7 @@ from django.db import transaction
 from django.utils import timezone
 from datetime import datetime, timedelta
 import random
-from EISwebsite.models import Employees, Department, Position
+from EMSwebsite.models import Employees, Department, Position
 
 # Sample data for generating realistic employees
 FIRST_NAMES = [

@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('EISwebsite', '0005_add_settings_json_fields'),
+        ('EMSwebsite', '0005_add_settings_json_fields'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -81,7 +81,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'ordering': ['-created_at'],
-                'indexes': [models.Index(fields=['recipient', 'is_read'], name='EISwebsite__recipie_8ad300_idx'), models.Index(fields=['notification_type', 'created_at'], name='EISwebsite__notific_f41a5b_idx')],
+                'indexes': [models.Index(fields=['recipient', 'is_read'], name='EMSwebsite__recipie_8ad300_idx'), models.Index(fields=['notification_type', 'created_at'], name='EMSwebsite__notific_f41a5b_idx')],
             },
         ),
     ]

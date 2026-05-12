@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('EISwebsite', '0015_department_grace_period_minutes_and_more'),
+        ('EMSwebsite', '0015_department_grace_period_minutes_and_more'),
     ]
 
     operations = [
@@ -53,8 +53,8 @@ class Migration(migrations.Migration):
                 ('started_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('completed_at', models.DateTimeField(blank=True, null=True)),
                 ('notes', models.TextField(blank=True, null=True)),
-                ('device', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='enrollment_logs', to='EISwebsite.zkdevice')),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='enrollment_logs', to='EISwebsite.employees')),
+                ('device', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='enrollment_logs', to='EMSwebsite.zkdevice')),
+                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='enrollment_logs', to='EMSwebsite.employees')),
                 ('initiated_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='initiated_enrollments', to=settings.AUTH_USER_MODEL)),
             ],
             options={
@@ -77,15 +77,15 @@ class Migration(migrations.Migration):
                 ('is_processed', models.BooleanField(default=False, help_text='Whether this log has been processed into Attendance record')),
                 ('processed_at', models.DateTimeField(blank=True, null=True)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('attendance_record', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='device_logs', to='EISwebsite.attendance')),
-                ('device', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='attendance_logs', to='EISwebsite.zkdevice')),
-                ('employee', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='device_attendance_logs', to='EISwebsite.employees')),
+                ('attendance_record', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='device_logs', to='EMSwebsite.attendance')),
+                ('device', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='attendance_logs', to='EMSwebsite.zkdevice')),
+                ('employee', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='device_attendance_logs', to='EMSwebsite.employees')),
             ],
             options={
                 'verbose_name': 'Attendance Log',
                 'verbose_name_plural': 'Attendance Logs',
                 'ordering': ['-timestamp'],
-                'indexes': [models.Index(fields=['-timestamp'], name='EISwebsite__timesta_bc4ded_idx'), models.Index(fields=['device', '-timestamp'], name='EISwebsite__device__a1895c_idx'), models.Index(fields=['employee', '-timestamp'], name='EISwebsite__employe_b21d65_idx'), models.Index(fields=['is_processed'], name='EISwebsite__is_proc_d8cffc_idx')],
+                'indexes': [models.Index(fields=['-timestamp'], name='EMSwebsite__timesta_bc4ded_idx'), models.Index(fields=['device', '-timestamp'], name='EMSwebsite__device__a1895c_idx'), models.Index(fields=['employee', '-timestamp'], name='EMSwebsite__employe_b21d65_idx'), models.Index(fields=['is_processed'], name='EMSwebsite__is_proc_d8cffc_idx')],
             },
         ),
     ]

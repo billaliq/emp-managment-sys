@@ -1,5 +1,5 @@
 """
-Django settings for EIS project.
+Django settings for EMS project.
 """
 
 from pathlib import Path
@@ -22,7 +22,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',  # Required for password reset
     'channels',  # Django Channels for WebSockets
-    'EISwebsite',
+    'EMSwebsite',
 ]
 
 MIDDLEWARE = [
@@ -34,10 +34,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'EISwebsite.middleware.NoCacheMiddleware',  # Add no-cache middleware for development
+    'EMSwebsite.middleware.NoCacheMiddleware',  # Add no-cache middleware for development
 ]
 
-ROOT_URLCONF = 'EIS.urls'
+ROOT_URLCONF = 'EMS.urls'
 
 TEMPLATES = [
     {
@@ -49,16 +49,16 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'EISwebsite.context_processors.user_role_context',
-                'EISwebsite.context_processors.get_notifications',
-                'EISwebsite.context_processors.system_settings_context',
+                'EMSwebsite.context_processors.user_role_context',
+                'EMSwebsite.context_processors.get_notifications',
+                'EMSwebsite.context_processors.system_settings_context',
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'EIS.wsgi.application'
-ASGI_APPLICATION = 'EIS.asgi.application'
+WSGI_APPLICATION = 'EMS.wsgi.application'
+ASGI_APPLICATION = 'EMS.asgi.application'
 
 # Django Channels Configuration
 CHANNEL_LAYERS = {

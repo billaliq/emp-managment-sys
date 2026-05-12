@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('EISwebsite', '0006_add_automatic_increment_system'),
+        ('EMSwebsite', '0006_add_automatic_increment_system'),
     ]
 
     operations = [

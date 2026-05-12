@@ -6,8 +6,8 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('EISwebsite', '0009_alter_employees_team'),
-        ('EISwebsite', '0009_employeeadditionaldocument'),
+        ('EMSwebsite', '0009_alter_employees_team'),
+        ('EMSwebsite', '0009_employeeadditionaldocument'),
     ]
 
     operations = [

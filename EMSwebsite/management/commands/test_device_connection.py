@@ -8,8 +8,8 @@ Usage:
     python manage.py test_device_connection --device-id 1
 """
 from django.core.management.base import BaseCommand
-from EISwebsite.models import ZKDevice
-from EISwebsite.device_utils import ZKDeviceManager
+from EMSwebsite.models import ZKDevice
+from EMSwebsite.device_utils import ZKDeviceManager
 
 # Try to import ZK library
 try:

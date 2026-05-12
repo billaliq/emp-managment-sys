@@ -12,7 +12,7 @@ from django.utils.dateparse import parse_date
 from datetime import datetime, timedelta, date
 from django.shortcuts import get_object_or_404
 
-from EISwebsite.context_processors import get_notifications
+from EMSwebsite.context_processors import get_notifications
 
 from .models import (
     Employees, Department, Position, Attendance, AttendanceSettings, LeaveRequest, HolidayDate,
@@ -978,7 +978,7 @@ def test_email(request):
     from django.conf import settings
     try:
         send_mail(
-            'Test Email from EIS',
+            'Test Email from EMS',
             'This is a test email to verify email configuration.',
             settings.DEFAULT_FROM_EMAIL or 'noreply@example.com',
             ['test@example.com'],
@@ -3438,7 +3438,7 @@ def reset_employee_password(request, employee_id):
             return JsonResponse({'success': False, 'error': 'Employee does not have a user account linked.'})
 
         # Generate new secure password
-        from EISwebsite.models import generate_secure_password
+        from EMSwebsite.models import generate_secure_password
         new_password = generate_secure_password(length=12)
 
         # Update the user's password (Django automatically hashes it)

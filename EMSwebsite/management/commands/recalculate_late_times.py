@@ -7,7 +7,7 @@ Usage: python manage.py recalculate_late_times
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from EISwebsite.models import Attendance
+from EMSwebsite.models import Attendance
 
 
 class Command(BaseCommand):

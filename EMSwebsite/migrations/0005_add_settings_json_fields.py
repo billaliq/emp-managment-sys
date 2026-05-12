@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('EISwebsite', '0004_add_temp_password_field'),
+        ('EMSwebsite', '0004_add_temp_password_field'),
     ]
 
     operations = [

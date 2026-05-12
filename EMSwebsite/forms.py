@@ -1,5 +1,5 @@
 """
-Custom forms for EIS application
+Custom forms for EMS application
 """
 from django import forms
 from django.contrib.auth.forms import PasswordResetForm

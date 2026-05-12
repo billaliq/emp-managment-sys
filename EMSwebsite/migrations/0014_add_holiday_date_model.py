@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('EISwebsite', '0013_remove_holiday_model'),
+        ('EMSwebsite', '0013_remove_holiday_model'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
