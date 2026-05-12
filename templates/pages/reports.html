@@ -1,0 +1,1134 @@
+{% load static %}
+{% load settings_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - Employee Information System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/reports.css' %}">
+    <script src="{% static 'js/appearance.js' %}"></script>
+</head>
+<body>
+    {% include "pages/splash_screen.html" %}
+    <script src="{% static 'js/splash.js' %}"></script>
+
+    <style>
+        .searchable-select-wrapper {
+            position: relative;
+        }
+        .searchable-select {
+            position: relative;
+        }
+        .searchable-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            margin-top: 4px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .dropdown-option {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+        }
+        .dropdown-option:hover {
+            background-color: #f0f0f0;
+        }
+        .dropdown-option:last-child {
+            border-bottom: none;
+        }
+        .dropdown-option strong {
+            color: #667eea;
+        }
+        #employeeSearchInput:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        /* Dark mode adjustments for reports page */
+        [data-theme="dark"] .filter-section {
+            background: #1a202c !important;
+        }
+        [data-theme="dark"] .filter-section label {
+            color: var(--text-light);
+        }
+        [data-theme="dark"] .content-card {
+            background: var(--bg-card);
+            box-shadow: var(--shadow-md);
+        }
+        [data-theme="dark"] .reports-grid .report-card {
+            background: var(--bg-card);
+            box-shadow: var(--shadow-sm);
+        }
+        [data-theme="dark"] .reports-grid .report-description {
+            color: var(--text-light);
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    {% include "pages/sidebar.html" %}
+
+    <!-- Main Content -->
+    <main class="main-content sidebar-{{ system_settings.sidebar_width|default:'normal' }}" id="mainContent">
+        <!-- Top Navigation -->
+        {% include "pages/navigation.html" %}
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <div class="page-header fade-in-up">
+                <h1>Reports & Analytics</h1>
+                <p>Generate and view detailed reports for your organization</p>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card fade-in-up">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <span class="stat-change {% if stats.reports_change > 0 %}positive{% else %}negative{% endif %}">
+                            {% if stats.reports_change > 0 %}+{% endif %}{{ stats.reports_change }}%
+                        </span>
+                    </div>
+                    <div class="stat-number">{{ stats.total_reports }}</div>
+                    <div class="stat-label">Total Reports</div>
+                </div>
+
+                <div class="stat-card success fade-in-up">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <span class="stat-change {% if stats.employee_change > 0 %}positive{% else %}negative{% endif %}">
+                            {% if stats.employee_change > 0 %}+{% endif %}{{ stats.employee_change }}
+                        </span>
+                    </div>
+                    <div class="stat-number">{{ stats.employee_reports }}</div>
+                    <div class="stat-label">Employee Reports</div>
+                </div>
+
+                <div class="stat-card warning fade-in-up">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <span class="stat-change {% if stats.payroll_change > 0 %}positive{% else %}negative{% endif %}">
+                            {% if stats.payroll_change > 0 %}+{% endif %}{{ stats.payroll_change }}%
+                        </span>
+                    </div>
+                    <div class="stat-number">{{ stats.payroll_reports }}</div>
+                    <div class="stat-label">Payroll Reports</div>
+                </div>
+
+                <div class="stat-card fade-in-up">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <span class="stat-change {% if stats.attendance_change > 0 %}positive{% else %}negative{% endif %}">
+                            {% if stats.attendance_change > 0 %}+{% endif %}{{ stats.attendance_change }}
+                        </span>
+                    </div>
+                    <div class="stat-number">{{ stats.attendance_reports }}</div>
+                    <div class="stat-label">Attendance Reports</div>
+                </div>
+            </div>
+
+            <!-- Available Reports -->
+            <div class="content-card fade-in-up">
+                <div class="card-header">
+                    <h3 class="card-title">Available Reports</h3>
+                    <button class="btn btn-primary" id="generateReportBtn">
+                        <i class="fas fa-plus"></i>
+                        Generate New Report
+                    </button>
+                </div>
+
+                <div class="reports-grid">
+                    <!-- Employee Report -->
+                    {% for type_code, type_name in available_report_types %}
+                    {% if type_code == 'employee' %}
+                    <div class="report-card">
+                        <div class="report-header">
+                            <div class="report-icon" style="background-color: #667eea;">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <span class="report-type">Employee Report</span>
+                        </div>
+                        <h3 class="report-title">Employee Directory Report</h3>
+                        <p class="report-description">
+                            Comprehensive list of all employees with their details including name, contact information,
+                            department, position, hire date, and employment status.
+                        </p>
+                        <div class="report-access">
+                            <strong>Access:</strong>
+                            {% if user_role == 'employee' %}
+                                <span class="badge">Your Data Only</span>
+                            {% else %}
+                                <span class="badge">All Employees</span>
+                            {% endif %}
+                        </div>
+                        <div class="report-meta">
+                            <div class="report-actions">
+                                <button class="btn btn-primary" style="padding: 0.5rem;"
+                                        onclick="generateFromTemplate('employee')">
+                                    <i class="fas fa-play"></i> Generate
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% for type_code, type_name in available_report_types %}
+                    {% if type_code == 'payroll' %}
+                    <div class="report-card">
+                        <div class="report-header">
+                            <div class="report-icon" style="background-color: #f093fb;">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </div>
+                            <span class="report-type">Payroll Report</span>
+                        </div>
+                        <h3 class="report-title">Payroll Summary Report</h3>
+                        <p class="report-description">
+                            Detailed payroll information including base salary, allowances, deductions,
+                            and net salary for each employee within the selected period.
+                        </p>
+                        <div class="report-access">
+                            <strong>Access:</strong> <span class="badge">Admin, HR, Finance</span>
+                        </div>
+                        <div class="report-meta">
+                            <div class="report-actions">
+                                <button class="btn btn-primary" style="padding: 0.5rem;"
+                                        onclick="generateFromTemplate('payroll')">
+                                    <i class="fas fa-play"></i> Generate
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% for type_code, type_name in available_report_types %}
+                    {% if type_code == 'attendance' %}
+                    <div class="report-card">
+                        <div class="report-header">
+                            <div class="report-icon" style="background-color: #4facfe;">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <span class="report-type">Attendance Report</span>
+                        </div>
+                        <h3 class="report-title">Attendance Records Report</h3>
+                        <p class="report-description">
+                            Daily attendance records showing check-in/check-out times, work duration,
+                            late arrivals, early departures, and overtime hours.
+                        </p>
+                        <div class="report-access">
+                            <strong>Access:</strong>
+                            {% if user_role == 'employee' %}
+                                <span class="badge">Your Records Only</span>
+                            {% else %}
+                                <span class="badge">All Records</span>
+                            {% endif %}
+                        </div>
+                        <div class="report-meta">
+                            <div class="report-actions">
+                                <button class="btn btn-primary" style="padding: 0.5rem;"
+                                        onclick="generateFromTemplate('attendance')">
+                                    <i class="fas fa-play"></i> Generate
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% for type_code, type_name in available_report_types %}
+                    {% if type_code == 'department' %}
+                    <div class="report-card">
+                        <div class="report-header">
+                            <div class="report-icon" style="background-color: #43e97b;">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <span class="report-type">Department Report</span>
+                        </div>
+                        <h3 class="report-title">Department Statistics Report</h3>
+                        <p class="report-description">
+                            Department-wise statistics including employee count, total salary expenditure,
+                            average salary, and department details.
+                        </p>
+                        <div class="report-access">
+                            <strong>Access:</strong> <span class="badge">Admin, HR, Managers</span>
+                        </div>
+                        <div class="report-meta">
+                            <div class="report-actions">
+                                <button class="btn btn-primary" style="padding: 0.5rem;"
+                                        onclick="generateFromTemplate('department')">
+                                    <i class="fas fa-play"></i> Generate
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% for type_code, type_name in available_report_types %}
+                    {% if type_code == 'leave' %}
+                    <div class="report-card">
+                        <div class="report-header">
+                            <div class="report-icon" style="background-color: #fa709a;">
+                                <i class="fas fa-calendar-times"></i>
+                            </div>
+                            <span class="report-type">Leave Report</span>
+                        </div>
+                        <h3 class="report-title">Leave Requests Report</h3>
+                        <p class="report-description">
+                            Leave requests and approvals including leave type, duration, status,
+                            approval details, and employee information.
+                        </p>
+                        <div class="report-access">
+                            <strong>Access:</strong>
+                            {% if user_role == 'employee' %}
+                                <span class="badge">Your Leaves Only</span>
+                            {% else %}
+                                <span class="badge">All Leaves</span>
+                            {% endif %}
+                        </div>
+                        <div class="report-meta">
+                            <div class="report-actions">
+                                <button class="btn btn-primary" style="padding: 0.5rem;"
+                                        onclick="generateFromTemplate('leave')">
+                                    <i class="fas fa-play"></i> Generate
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% for type_code, type_name in available_report_types %}
+                    {% if type_code == 'loan' %}
+                    <div class="report-card">
+                        <div class="report-header">
+                            <div class="report-icon" style="background-color: #fee140;">
+                                <i class="fas fa-hand-holding-usd"></i>
+                            </div>
+                            <span class="report-type">Loan Report</span>
+                        </div>
+                        <h3 class="report-title">Loan Management Report</h3>
+                        <p class="report-description">
+                            Loan applications, approvals, repayment schedules, and status including
+                            loan amount, purpose, installments, and remaining balance.
+                        </p>
+                        <div class="report-access">
+                            <strong>Access:</strong>
+                            {% if user_role == 'employee' %}
+                                <span class="badge">Your Loans Only</span>
+                            {% else %}
+                                <span class="badge">Admin, HR, Finance</span>
+                            {% endif %}
+                        </div>
+                        <div class="report-meta">
+                            <div class="report-actions">
+                                <button class="btn btn-primary" style="padding: 0.5rem;"
+                                        onclick="generateFromTemplate('loan')">
+                                    <i class="fas fa-play"></i> Generate
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Recent Reports -->
+            <div class="content-card fade-in-up">
+                <div class="card-header">
+                    <h3 class="card-title">Generated Reports</h3>
+                    <div>
+                        <button class="btn btn-secondary" onclick="refreshReports()">
+                            <i class="fas fa-sync-alt"></i>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search and Filter Section -->
+                <div class="filter-section" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <form method="GET" action="{% url 'reports' %}" id="filterForm">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Search</label>
+                                <input type="text" name="search" class="form-input" placeholder="Search reports..."
+                                       value="{{ search_query }}" style="width: 100%;">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Report Type</label>
+                                <select name="report_type" class="form-select" style="width: 100%;">
+                                    <option value="">All Types</option>
+                                    {% for type_code, type_name in report_types %}
+                                    <option value="{{ type_code }}" {% if report_type_filter == type_code %}selected{% endif %}>
+                                        {{ type_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Status</label>
+                                <select name="status" class="form-select" style="width: 100%;">
+                                    <option value="">All Status</option>
+                                    {% for status_code, status_name in status_choices %}
+                                    <option value="{{ status_code }}" {% if status_filter == status_code %}selected{% endif %}>
+                                        {{ status_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Date From</label>
+                                <input type="date" name="date_from" class="form-input" value="{{ date_from }}" style="width: 100%;">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Date To</label>
+                                <input type="date" name="date_to" class="form-input" value="{{ date_to }}" style="width: 100%;">
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Apply Filters
+                            </button>
+                            <a href="{% url 'reports' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Clear
+                            </a>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Report Name</th>
+                                <th>Type</th>
+                                <th>Generated On</th>
+                                <th>Size</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportsTableBody">
+                            {% for report in recent_reports %}
+                            <tr>
+                                <td>{{ report.report_name }}</td>
+                                <td>
+                                    {% if report.report_type == 'employee' %}
+                                        <span class="badge" style="background-color: #667eea;">
+                                            {{ report.get_report_type_display }}
+                                        </span>
+                                    {% elif report.report_type == 'payroll' %}
+                                        <span class="badge" style="background-color: #f093fb;">
+                                            {{ report.get_report_type_display }}
+                                        </span>
+                                    {% elif report.report_type == 'attendance' %}
+                                        <span class="badge" style="background-color: #4facfe;">
+                                            {{ report.get_report_type_display }}
+                                        </span>
+                                    {% elif report.report_type == 'department' %}
+                                        <span class="badge" style="background-color: #43e97b;">
+                                            {{ report.get_report_type_display }}
+                                        </span>
+                                    {% elif report.report_type == 'leave' %}
+                                        <span class="badge" style="background-color: #fa709a;">
+                                            {{ report.get_report_type_display }}
+                                        </span>
+                                    {% elif report.report_type == 'loan' %}
+                                        <span class="badge" style="background-color: #fee140;">
+                                            {{ report.get_report_type_display }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge" style="background-color: #6c757d;">
+                                            {{ report.get_report_type_display }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ report.generated_on|format_datetime }}</td>
+                                <td>{{ report.get_file_size_display }}</td>
+                                <td>
+                                    <span class="badge {{ report.status }}">
+                                        {{ report.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if report.status == 'completed' %}
+                                    <div style="display: flex; gap: 0.25rem;">
+                                        <a href="{% url 'download_report' report.id %}" class="btn btn-secondary" style="padding: 0.5rem;" title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        <a href="{% url 'view_report' report.id %}" class="btn btn-secondary" style="padding: 0.5rem;" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'view_report' report.id %}?print=true" target="_blank" class="btn btn-secondary" style="padding: 0.5rem;" title="Print">
+                                            <i class="fas fa-print"></i>
+                                        </a>
+                                        {% if user.is_superuser or report.generated_by_id == user.id %}
+                                        <button class="btn btn-secondary" style="padding: 0.5rem;" title="Delete"
+                                                data-report-id="{{ report.id }}"
+                                                data-delete-url="{% url 'delete_report' report.id %}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                    {% elif report.status == 'processing' %}
+                                    <span class="text-muted"><i class="fas fa-spinner fa-spin"></i> Processing...</span>
+                                    {% elif report.status == 'failed' %}
+                                    <button class="btn btn-secondary" style="padding: 0.5rem;" title="View Error"
+                                            onclick="alert('Error: {% if report.error_message %}{{ report.error_message|escapejs }}{% else %}Unknown error{% endif %}')">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 2rem;">
+                                    <i class="fas fa-file-alt" style="font-size: 2rem; color: #6c757d; margin-bottom: 0.5rem; display: block;"></i>
+                                    No reports found. Generate a new report to get started.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Generate Report Modal -->
+    <div class="modal" id="generateReportModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Generate New Report</h2>
+                <button class="close-btn" id="closeModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="reportForm" method="POST" onsubmit="return false;">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">Report Type</label>
+                    <select class="form-select" id="reportType" name="report_type" required>
+                        <option value="">Select Report Type</option>
+                        {% for type_code, type_name in available_report_types %}
+                        <option value="{{ type_code }}">{{ type_name }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">Only report types you have access to are shown.</small>
+                </div>
+
+                <!-- Additional Filters (shown based on report type) -->
+                <div id="additionalFilters" style="display: none;">
+                    {% if is_admin or user_role == 'hr' or user_role == 'manager' %}
+                    <div class="form-group" id="departmentFilter">
+                        <label class="form-label">Department (Optional)</label>
+                        <select class="form-select" name="department">
+                            <option value="">All Departments</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" id="employeeFilter" style="display: none;">
+                        <label class="form-label">Employee (Optional)</label>
+                        <div class="searchable-select-wrapper" style="position: relative;">
+                            <input type="hidden" name="employee" id="employeeSelectHidden" value="">
+                            <div class="searchable-select" id="employeeSelectContainer" style="position: relative;">
+                                <input type="text"
+                                       class="form-input"
+                                       id="employeeSearchInput"
+                                       placeholder="Search employee by name or code..."
+                                       autocomplete="off"
+                                       style="width: 100%; padding-right: 40px;">
+                                <i class="fas fa-chevron-down" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #6c757d;"></i>
+                                <div class="searchable-dropdown" id="employeeDropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 300px; overflow-y: auto; z-index: 1000; margin-top: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                    <div class="dropdown-option" data-value="" style="padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #f0f0f0;">
+                                        <strong>All Employees</strong>
+                                    </div>
+                                    {% for emp in employees %}
+                                    <div class="dropdown-option"
+                                         data-value="{{ emp.id }}"
+                                         data-text="{{ emp.code }} - {{ emp.firstname }} {{ emp.lastname|default:"" }}"
+                                         style="padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #f0f0f0; transition: background-color 0.2s;">
+                                        <div style="font-weight: 500;">{{ emp.firstname }} {{ emp.lastname|default:"" }}</div>
+                                        <div style="font-size: 0.85rem; color: #6c757d;">{{ emp.code }}</div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div id="selectedEmployeeDisplay" style="margin-top: 8px; padding: 8px; background: #f8f9fa; border-radius: 4px; display: none;">
+                                <span style="font-weight: 500;">Selected: </span>
+                                <span id="selectedEmployeeText"></span>
+                                <button type="button" id="clearEmployeeBtn" style="margin-left: 10px; padding: 2px 8px; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 0.85rem;">Clear</button>
+                            </div>
+                        </div>
+                        <small class="form-text text-muted">Search and select a specific employee to generate their attendance report</small>
+                    </div>
+                    {% endif %}
+
+                    <!-- Attendance-specific filters (visible when Attendance report is selected) -->
+                    <div class="form-group" id="attendanceFilter" style="display: none;">
+                        <label class="form-label">Attendance Detail</label>
+                        <select class="form-select" name="attendance_detail">
+                            <option value="">All Attendance</option>
+                            <option value="late_only">Late arrivals</option>
+                            <option value="weekend_only">Saturdays & Sundays</option>
+                            <option value="late_sitting_only">Late sitting</option>
+                        </select>
+                        <small class="form-text text-muted">
+                            Choose a specific attendance focus for this report, e.g. only late arrivals or weekend work.
+                        </small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Date Range</label>
+                        <select class="form-select" id="dateRange" name="date_range" required>
+                            <option value="last_week">Last Week</option>
+                            <option value="last_month" selected>Last Month</option>
+                            <option value="last_quarter">Last Quarter</option>
+                            <option value="last_year">Last Year</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row" id="customDateRange" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" class="form-input" name="start_date" id="startDate">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">End Date</label>
+                        <input type="date" class="form-input" name="end_date" id="endDate">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Format</label>
+                    <select class="form-select" name="format" required>
+                        <option value="pdf">PDF</option>
+                        <option value="excel">Excel</option>
+                        <option value="csv">CSV</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Include Details</label>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="includeCharts"
+                               name="include_charts" checked>
+                        <label class="form-check-label" for="includeCharts">Include Charts & Graphs</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="includeSummary"
+                               name="include_summary" checked>
+                        <label class="form-check-label" for="includeSummary">Include Executive Summary</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="includeRawData"
+                               name="include_raw_data">
+                        <label class="form-check-label" for="includeRawData">Include Raw Data</label>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="fas fa-cog fa-spin" style="display: none;" id="loadingIcon"></i>
+                        Generate Report
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Prevent multiple script executions
+        if (window.reportsPageInitialized) {
+            console.warn('Reports page script already initialized');
+        } else {
+            window.reportsPageInitialized = true;
+
+            // Get CSRF token
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrftoken = getCookie('csrftoken');
+
+            // Global flag to prevent double submission
+            window.reportSubmissionInProgress = false;
+
+            // Modal controls
+            const generateReportBtn = document.getElementById('generateReportBtn');
+            const generateReportModal = document.getElementById('generateReportModal');
+            const closeModal = document.getElementById('closeModal');
+            const cancelBtn = document.getElementById('cancelBtn');
+            const dateRangeSelect = document.getElementById('dateRange');
+            const customDateRange = document.getElementById('customDateRange');
+
+            if (generateReportBtn) {
+                generateReportBtn.addEventListener('click', () => {
+                    generateReportModal.classList.add('active');
+                });
+            }
+
+            function resetReportForm() {
+                const reportForm = document.getElementById('reportForm');
+                if (reportForm) {
+                    reportForm.reset();
+                    // Reset employee selector
+                    const employeeSelectHidden = document.getElementById('employeeSelectHidden');
+                    const employeeSearchInput = document.getElementById('employeeSearchInput');
+                    const selectedEmployeeDisplay = document.getElementById('selectedEmployeeDisplay');
+                    if (employeeSelectHidden) employeeSelectHidden.value = '';
+                    if (employeeSearchInput) employeeSearchInput.value = '';
+                    if (selectedEmployeeDisplay) selectedEmployeeDisplay.style.display = 'none';
+                    // Hide additional filters
+                    const additionalFilters = document.getElementById('additionalFilters');
+                    if (additionalFilters) additionalFilters.style.display = 'none';
+                }
+            }
+
+            if (closeModal) {
+                closeModal.addEventListener('click', () => {
+                    generateReportModal.classList.remove('active');
+                    resetReportForm();
+                });
+            }
+
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => {
+                    generateReportModal.classList.remove('active');
+                    resetReportForm();
+                });
+            }
+
+            if (generateReportModal) {
+                generateReportModal.addEventListener('click', (e) => {
+                    if (e.target === generateReportModal) {
+                        generateReportModal.classList.remove('active');
+                    }
+                });
+            }
+
+            if (dateRangeSelect && customDateRange) {
+                dateRangeSelect.addEventListener('change', () => {
+                    if (dateRangeSelect.value === 'custom') {
+                        customDateRange.style.display = 'grid';
+                    } else {
+                        customDateRange.style.display = 'none';
+                    }
+                });
+            }
+
+            // Show/hide additional filters based on report type
+            const reportTypeSelect = document.getElementById('reportType');
+            const additionalFilters = document.getElementById('additionalFilters');
+            const employeeFilter = document.getElementById('employeeFilter');
+            const departmentFilter = document.getElementById('departmentFilter');
+            const attendanceFilter = document.getElementById('attendanceFilter');
+
+            if (reportTypeSelect && additionalFilters) {
+                function updateFiltersVisibility() {
+                    const selectedType = reportTypeSelect.value;
+                    if (selectedType) {
+                        additionalFilters.style.display = 'block';
+
+                        // Show employee filter only for attendance reports
+                        if (selectedType === 'attendance' && employeeFilter) {
+                            employeeFilter.style.display = 'block';
+                        } else if (employeeFilter) {
+                            employeeFilter.style.display = 'none';
+                            // Clear employee selection when hidden
+                            const employeeSelect = document.getElementById('employeeSelect');
+                            if (employeeSelect) {
+                                employeeSelect.value = '';
+                            }
+                        }
+
+                        // Show department filter for reports that support it
+                        if (['attendance', 'payroll', 'leave', 'loan'].includes(selectedType) && departmentFilter) {
+                            departmentFilter.style.display = 'block';
+                        } else if (departmentFilter) {
+                            departmentFilter.style.display = 'none';
+                        }
+
+                        // Show attendance-detail filter only for attendance reports
+                        if (selectedType === 'attendance' && attendanceFilter) {
+                            attendanceFilter.style.display = 'block';
+                        } else if (attendanceFilter) {
+                            attendanceFilter.style.display = 'none';
+                        }
+                    } else {
+                        additionalFilters.style.display = 'none';
+                    }
+                }
+
+                reportTypeSelect.addEventListener('change', updateFiltersVisibility);
+
+                // Initialize on page load if report type is already selected
+                if (reportTypeSelect.value) {
+                    updateFiltersVisibility();
+                }
+            }
+
+            // Searchable Employee Selector
+            const employeeSearchInput = document.getElementById('employeeSearchInput');
+            const employeeDropdown = document.getElementById('employeeDropdown');
+            const employeeSelectHidden = document.getElementById('employeeSelectHidden');
+            const selectedEmployeeDisplay = document.getElementById('selectedEmployeeDisplay');
+            const selectedEmployeeText = document.getElementById('selectedEmployeeText');
+            const clearEmployeeBtn = document.getElementById('clearEmployeeBtn');
+            let allEmployeeOptions = [];
+
+            if (employeeSearchInput && employeeDropdown) {
+                // Store all options
+                const options = employeeDropdown.querySelectorAll('.dropdown-option');
+                allEmployeeOptions = Array.from(options);
+
+                // Show dropdown on input focus
+                employeeSearchInput.addEventListener('focus', function() {
+                    employeeDropdown.style.display = 'block';
+                    filterEmployeeOptions('');
+                });
+
+                // Filter options as user types
+                employeeSearchInput.addEventListener('input', function(e) {
+                    const searchTerm = e.target.value.toLowerCase().trim();
+                    filterEmployeeOptions(searchTerm);
+                });
+
+                // Handle option selection
+                allEmployeeOptions.forEach(option => {
+                    option.addEventListener('click', function() {
+                        const value = this.getAttribute('data-value');
+                        const text = this.getAttribute('data-text') || this.textContent.trim();
+
+                        employeeSelectHidden.value = value;
+                        employeeSearchInput.value = value ? text : '';
+
+                        if (value) {
+                            selectedEmployeeText.textContent = text;
+                            selectedEmployeeDisplay.style.display = 'block';
+                        } else {
+                            selectedEmployeeDisplay.style.display = 'none';
+                        }
+
+                        employeeDropdown.style.display = 'none';
+                    });
+
+                    // Hover effect
+                    option.addEventListener('mouseenter', function() {
+                        this.style.backgroundColor = '#f0f0f0';
+                    });
+                    option.addEventListener('mouseleave', function() {
+                        this.style.backgroundColor = '';
+                    });
+                });
+
+                // Clear selection
+                if (clearEmployeeBtn) {
+                    clearEmployeeBtn.addEventListener('click', function() {
+                        employeeSelectHidden.value = '';
+                        employeeSearchInput.value = '';
+                        selectedEmployeeDisplay.style.display = 'none';
+                    });
+                }
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    const container = document.getElementById('employeeSelectContainer');
+                    if (container && !container.contains(e.target)) {
+                        employeeDropdown.style.display = 'none';
+                    }
+                });
+
+                function filterEmployeeOptions(searchTerm) {
+                    let visibleCount = 0;
+                    allEmployeeOptions.forEach(option => {
+                        const text = option.getAttribute('data-text') || option.textContent.toLowerCase();
+                        const value = option.getAttribute('data-value');
+
+                        // Always show "All Employees" option
+                        if (!value) {
+                            option.style.display = 'block';
+                            visibleCount++;
+                            return;
+                        }
+
+                        if (!searchTerm || text.toLowerCase().includes(searchTerm)) {
+                            option.style.display = 'block';
+                            visibleCount++;
+                        } else {
+                            option.style.display = 'none';
+                        }
+                    });
+
+                    // Show message if no results
+                    let noResultsMsg = employeeDropdown.querySelector('.no-results-msg');
+                    if (visibleCount === 1 && searchTerm) { // Only "All Employees" visible
+                        if (!noResultsMsg) {
+                            noResultsMsg = document.createElement('div');
+                            noResultsMsg.className = 'no-results-msg';
+                            noResultsMsg.style.cssText = 'padding: 15px; text-align: center; color: #6c757d; font-style: italic;';
+                            noResultsMsg.textContent = 'No employees found matching your search';
+                            employeeDropdown.appendChild(noResultsMsg);
+                        }
+                    } else if (noResultsMsg) {
+                        noResultsMsg.remove();
+                    }
+                }
+            }
+
+            // Form submission - prevent double submission
+            const reportForm = document.getElementById('reportForm');
+
+            if (reportForm) {
+                // Use a unique identifier to prevent duplicate listener attachment
+                if (reportForm.dataset.listenerAttached === 'true') {
+                    console.warn('Form listener already attached');
+                } else {
+                    reportForm.dataset.listenerAttached = 'true';
+
+                    reportForm.addEventListener('submit', async function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+
+                        // Prevent double submission using global flag
+                        if (window.reportSubmissionInProgress) {
+                            console.warn('Report submission already in progress, ignoring duplicate');
+                            return false;
+                        }
+                        window.reportSubmissionInProgress = true;
+
+                        const submitBtn = document.getElementById('submitBtn');
+                        const loadingIcon = document.getElementById('loadingIcon');
+
+                        // Show loading
+                        submitBtn.disabled = true;
+                        const originalText = submitBtn.textContent;
+                        submitBtn.textContent = 'Generating...';
+                        if (loadingIcon) {
+                            loadingIcon.style.display = 'inline-block';
+                        }
+
+                        const formData = new FormData(reportForm);
+
+                        let data = null;
+                        try {
+                            const response = await fetch('{% url "generate_report" %}', {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRFToken': csrftoken
+                                },
+                                body: formData
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+
+                            data = await response.json();
+
+                            if (data.success) {
+                                alert('Report generation started! You will be notified when it is ready.');
+                                generateReportModal.classList.remove('active');
+                                reportForm.reset();
+                                // Refresh the page to show new report
+                                setTimeout(() => {
+                                    window.reportSubmissionInProgress = false;
+                                    window.location.reload();
+                                }, 1000);
+                            } else {
+                                alert('Error: ' + data.message);
+                                window.reportSubmissionInProgress = false;
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = originalText;
+                                if (loadingIcon) {
+                                    loadingIcon.style.display = 'none';
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error generating report:', error);
+                            alert('Error generating report: ' + error.message);
+                            window.reportSubmissionInProgress = false;
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = originalText;
+                            if (loadingIcon) {
+                                loadingIcon.style.display = 'none';
+                            }
+                        }
+
+                        return false;
+                    }, { capture: true });
+                }
+            }
+        }
+
+        // Report actions - Delete function using event delegation
+        document.addEventListener('click', function(e) {
+            const deleteButton = e.target.closest('button[data-delete-url]');
+            if (deleteButton) {
+                e.preventDefault();
+                const deleteUrl = deleteButton.getAttribute('data-delete-url');
+                const reportId = deleteButton.getAttribute('data-report-id');
+                deleteReport(deleteUrl, reportId);
+            }
+        });
+
+        async function deleteReport(deleteUrl, reportId) {
+            if (!confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(deleteUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                // Check if response is JSON before parsing
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text.substring(0, 200));
+                    throw new Error('Server returned an invalid response. Please try again.');
+                }
+
+                if (!response.ok) {
+                    // Try to get error message from JSON response
+                    try {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                    } catch (e) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Report deleted successfully');
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to delete report'));
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                alert('Error deleting report: ' + error.message);
+            }
+        }
+
+        function generateFromTemplate(reportType) {
+            const reportTypeSelect = document.getElementById('reportType');
+            if (reportTypeSelect) {
+                reportTypeSelect.value = reportType;
+                generateReportModal.classList.add('active');
+            }
+        }
+
+        function viewTemplate(templateId) {
+            alert('Template view functionality coming soon!');
+        }
+
+        function refreshReports() {
+            window.location.reload();
+        }
+
+        // Show/hide additional filters based on report type
+        const reportTypeSelect = document.getElementById('reportType');
+        const additionalFilters = document.getElementById('additionalFilters');
+
+        if (reportTypeSelect) {
+            reportTypeSelect.addEventListener('change', function() {
+                const reportType = this.value;
+                // Show filters for reports that support department filtering
+                if (['employee', 'attendance', 'payroll', 'leave', 'loan'].includes(reportType)) {
+                    additionalFilters.style.display = 'block';
+                } else {
+                    additionalFilters.style.display = 'none';
+                }
+            });
+        }
+
+        // Real-time updates for processing reports
+        function checkProcessingReports() {
+            const processingRows = document.querySelectorAll('tr');
+            processingRows.forEach(row => {
+                const statusBadge = row.querySelector('.badge.processing');
+                if (statusBadge) {
+                    const viewLink = row.querySelector('a[href*="/reports/view/"]');
+                    if (viewLink) {
+                        const href = viewLink.getAttribute('href');
+                        const match = href.match(/\/reports\/view\/([^\/]+)\//);
+                        const reportId = match ? match[1] : null;
+
+                        if (reportId) {
+                            const statusUrl = `/reports/status/${reportId}/`;
+
+                            fetch(statusUrl)
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error(`HTTP error! status: ${response.status}`);
+                                    }
+                                    return response.json();
+                                })
+                                .then(data => {
+                                    if (data.status === 'completed' || data.status === 'failed') {
+                                        window.location.reload();
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error checking report status:', error);
+                                });
+                        }
+                    }
+                }
+            });
+        }
+
+        // Check for processing reports every 5 seconds
+        setInterval(checkProcessingReports, 5000);
+    </script>
+    <script src="{% static 'js/reports.js' %}"></script>
+</body>
+</html>

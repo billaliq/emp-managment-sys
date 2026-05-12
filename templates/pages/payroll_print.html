@@ -1,0 +1,221 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>{{ title }} - Payroll Report</title>
+  <style>
+    @media print {
+      @page {
+        size: A4;
+        margin: 1cm;
+      }
+      .no-print { display: none !important; }
+      body { margin: 0; padding: 0; }
+    }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      color: #333;
+    }
+    .print-header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #333;
+    }
+    .print-header h1 {
+      margin: 0 0 10px 0;
+      font-size: 24px;
+    }
+    .print-header p {
+      margin: 5px 0;
+      color: #666;
+      font-size: 14px;
+    }
+    .print-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      font-size: 12px;
+      color: #666;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 12px;
+    }
+    table th {
+      background: #f5f5f5;
+      padding: 10px;
+      text-align: left;
+      border: 1px solid #ddd;
+      font-weight: bold;
+    }
+    table td {
+      padding: 8px;
+      border: 1px solid #ddd;
+    }
+    table tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+    .text-right {
+      text-align: right;
+    }
+    .text-center {
+      text-align: center;
+    }
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    .status-paid { background: #d4edda; color: #155724; }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-failed { background: #f8d7da; color: #721c24; }
+    .summary {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid #333;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    .summary-total {
+      font-weight: bold;
+      font-size: 16px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #ddd;
+    }
+    .no-print {
+      text-align: center;
+      margin: 20px 0;
+    }
+    .btn {
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 0 5px;
+    }
+    .btn:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print">
+    <button onclick="window.print()" class="btn">
+      <i class="fas fa-print"></i> Print
+    </button>
+    <button onclick="window.close()" class="btn" style="background: #6c757d;">
+      <i class="fas fa-times"></i> Close
+    </button>
+  </div>
+
+  <div class="print-header">
+    <h1>{{ title }}</h1>
+    <p>Generated on {{ print_date|date:"F d, Y H:i" }}</p>
+    <p>Employee Information System</p>
+  </div>
+
+  <div class="print-info">
+    <div>
+      <strong>Report Date:</strong> {{ print_date|date:"F d, Y" }}
+    </div>
+    <div>
+      <strong>Total Records:</strong> {{ records|length }}
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Employee ID</th>
+        <th>Employee Name</th>
+        {% if is_admin_user %}
+        <th>Department</th>
+        <th>Position</th>
+        {% endif %}
+        <th class="text-right">Base Salary</th>
+        <th class="text-right">Allowances</th>
+        <th class="text-right">Deductions</th>
+        <th class="text-right">Net Salary</th>
+        <th>Pay Date</th>
+        <th class="text-center">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in records %}
+      <tr>
+        <td>{{ record.employee.code|default:"N/A" }}</td>
+        <td>{{ record.employee.firstname }} {{ record.employee.lastname|default:"" }}</td>
+        {% if is_admin_user %}
+        <td>{{ record.employee.department.name|default:"N/A" }}</td>
+        <td>{{ record.employee.position.name|default:"N/A" }}</td>
+        {% endif %}
+        <td class="text-right">PKR {{ record.base_salary|floatformat:2 }}</td>
+        <td class="text-right">PKR {{ record.allowances|floatformat:2 }}</td>
+        <td class="text-right">PKR {{ record.deductions|floatformat:2 }}</td>
+        <td class="text-right"><strong>PKR {{ record.net_salary|floatformat:2 }}</strong></td>
+        <td>{{ record.pay_date|date:"Y-m-d" }}</td>
+        <td class="text-center">
+          <span class="status-badge status-{{ record.status }}">
+            {{ record.get_status_display }}
+          </span>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="{% if is_admin_user %}10{% else %}8{% endif %}" class="text-center">
+          No records found.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if records %}
+  <div class="summary">
+    <div class="summary-row">
+      <strong>Total Records:</strong>
+      <strong>{{ records|length }}</strong>
+    </div>
+    <div class="summary-row">
+      <strong>Total Base Salary:</strong>
+      <strong>${{ total_base|floatformat:2 }}</strong>
+    </div>
+    <div class="summary-row">
+      <strong>Total Allowances:</strong>
+      <strong>${{ total_allowances|floatformat:2 }}</strong>
+    </div>
+    <div class="summary-row">
+      <strong>Total Deductions:</strong>
+      <strong>${{ total_deductions|floatformat:2 }}</strong>
+    </div>
+    <div class="summary-row summary-total">
+      <strong>Total Net Salary:</strong>
+      <strong>${{ total_net|floatformat:2 }}</strong>
+    </div>
+  </div>
+  {% endif %}
+
+  <script>
+    // Auto-print when page loads (optional)
+    // window.onload = function() {
+    //   window.print();
+    // };
+  </script>
+</body>
+</html>
+
+

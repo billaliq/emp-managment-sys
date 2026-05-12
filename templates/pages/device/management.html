@@ -1,0 +1,324 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Management | Funprime Technology</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="{% static 'js/appearance.js' %}"></script>
+</head>
+<body>
+    {% include "pages/splash_screen.html" %}
+    <script src="{% static 'js/splash.js' %}"></script>
+    <!-- Loading Screen -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+    {% include "pages/sidebar.html" %}
+
+    <main class="main-content" id="mainContent">
+        {% include "pages/navigation.html" %}
+
+        <div class="page-content">
+            <div class="page-header fade-in-up">
+                <div>
+                    <h1>Device Management</h1>
+                    <p class="text-muted">Manage your ZKTeco biometric devices efficiently</p>
+                </div>
+                <!-- Optional: Add filters or summary stats here if needed later -->
+            </div>
+
+            <!-- Add Device Form -->
+            <div class="modern-card fade-in-up">
+                <div class="modern-card-header">
+                    <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    <h3>Add New Device</h3>
+                </div>
+                <div class="modern-card-body">
+                    <form id="add-device-form">
+                        <div class="form-row" style="display: flex; gap: 1.5rem; margin-bottom: 1.5rem;">
+                            <div class="form-group" style="flex: 2;">
+                                <label for="device-name" style="font-weight: 600; color: #4a5568; margin-bottom: 0.5rem; display: block;">Device Name *</label>
+                                <input type="text" id="device-name" class="form-control form-control-modern" placeholder="e.g. Main Entrance" required>
+                            </div>
+                            <div class="form-group" style="flex: 2;">
+                                <label for="device-ip" style="font-weight: 600; color: #4a5568; margin-bottom: 0.5rem; display: block;">IP Address *</label>
+                                <div style="position: relative;">
+                                    <i class="fas fa-network-wired" style="position: absolute; left: 12px; top: 14px; color: #a0aec0;"></i>
+                                    <input type="text" id="device-ip" class="form-control form-control-modern" placeholder="192.168.1.201" style="padding-left: 35px;" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row" style="display: flex; gap: 1.5rem; margin-bottom: 2rem;">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="device-port" style="font-weight: 600; color: #4a5568; margin-bottom: 0.5rem; display: block;">Port</label>
+                                <input type="number" id="device-port" class="form-control form-control-modern" value="4370" required>
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label for="device-timeout" style="font-weight: 600; color: #4a5568; margin-bottom: 0.5rem; display: block;">Timeout (s)</label>
+                                <input type="number" id="device-timeout" class="form-control form-control-modern" value="5" max="30" required>
+                            </div>
+                            <div class="form-group" style="flex: 2;">
+                                <label for="device-password" style="font-weight: 600; color: #4a5568; margin-bottom: 0.5rem; display: block;">Device Password (Optional)</label>
+                                <input type="password" id="device-password" class="form-control form-control-modern" placeholder="••••••">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <button type="button" class="btn btn-primary btn-lg" onclick="addDevice()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding-left: 2rem; padding-right: 2rem; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.25);">
+                                <i class="fas fa-save mr-2"></i> Add Device
+                            </button>
+                            <button type="button" class="btn btn-light btn-lg" onclick="testConnection()" style="background: #f1f5f9; color: #475569; border: none;">
+                                <i class="fas fa-bolt mr-2"></i> Test Connection Only
+                            </button>
+                            <button type="button" class="btn btn-info btn-lg" onclick="fetchEmployees()" style="background: #63b3ed; color: #fff; border: none; margin-left: 1rem;">
+                                <i class="fas fa-users-cog mr-2"></i> Sync Employees
+                            </button>
+                            <div id="device-status" style="flex-grow: 1; margin-left: 1rem;"></div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Existing Devices Grid -->
+            <div class="mt-5 fade-in-up" style="animation-delay: 0.1s;">
+                <h3 style="font-size: 1.25rem; font-weight: 700; color: #2d3748; margin-bottom: 1rem; padding-left: 0.5rem; border-left: 4px solid #667eea;">
+                    Connected Devices
+                </h3>
+
+                <div class="device-grid">
+                    {% for device in devices %}
+                    <div class="device-card">
+                        <div class="device-card-header">
+                            <h3>{{ device.name }}</h3>
+                            <div class="device-status-badge status-{{ device.status }}">
+                                <span class="status-dot"></span>
+                                {{ device.get_status_display }}
+                            </div>
+                        </div>
+                        <div class="device-card-body">
+                            <div class="device-info-row">
+                                <span class="device-info-label"><i class="fas fa-network-wired text-muted mr-2"></i>IP Address</span>
+                                <span class="device-info-value" style="font-family: 'Courier New', monospace;">{{ device.ip_address }}</span>
+                            </div>
+                            <div class="device-info-row">
+                                <span class="device-info-label"><i class="fas fa-plug text-muted mr-2"></i>Port</span>
+                                <span class="device-info-value">{{ device.port }}</span>
+                            </div>
+                            <div class="device-info-row">
+                                <span class="device-info-label"><i class="fas fa-history text-muted mr-2"></i>Last Seen</span>
+                                <span class="device-info-value">
+                                    {% if device.last_connected %}
+                                        {{ device.last_connected|date:"M d, H:i" }}
+                                    {% else %}
+                                        <span class="text-muted">Never</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="device-card-footer">
+                            <button class="btn-device-action btn-test" data-id="{{ device.id }}" onclick="checkDeviceStatus(this.dataset.id)">
+                                <i class="fas fa-sync-alt"></i> Test Status
+                            </button>
+                            <button class="btn-device-action btn-delete" data-id="{{ device.id }}" data-name="{{ device.name }}" onclick="deleteDevice(this.dataset.id, this.dataset.name)">
+                                <i class="fas fa-trash-alt"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center py-5 device-empty-state" style="grid-column: 1 / -1; background: #fff; border-radius: 12px; border: 2px dashed #e2e8f0;">
+                        <div style="font-size: 3rem; color: #cbd5e0; margin-bottom: 1rem;">
+                            <i class="fas fa-server"></i>
+                        </div>
+                        <h4 style="color: #4a5568;">No devices configured yet</h4>
+                        <p class="text-muted">Add your first biomentric device using the form above.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <style>
+        /* Dark mode adjustments for device management */
+        [data-theme="dark"] .modern-card {
+            background: var(--bg-card);
+            box-shadow: var(--shadow-md);
+        }
+        [data-theme="dark"] .modern-card-header {
+            box-shadow: var(--shadow-sm);
+        }
+        [data-theme="dark"] .device-card {
+            background: var(--bg-card);
+            border-color: var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+        [data-theme="dark"] .device-empty-state {
+            background: #1a202c !important;
+            border-color: var(--border-color) !important;
+        }
+    </style>
+
+    <script>
+        function addDevice() {
+            const name = document.getElementById('device-name').value.trim();
+            const ip = document.getElementById('device-ip').value.trim();
+            const port = parseInt(document.getElementById('device-port').value);
+            const timeout = parseInt(document.getElementById('device-timeout').value);
+            const password = document.getElementById('device-password').value.trim() || null;
+
+            if (!name || !ip) {
+                alert('Please fill in device name and IP address');
+                return;
+            }
+
+            const statusDiv = document.getElementById('device-status');
+            statusDiv.innerHTML = '<span class="text-info"><i class="fas fa-circle-notch fa-spin"></i> Adding device...</span>';
+
+            fetch('/api/device/create/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    name: name,
+                    ip_address: ip,
+                    port: port,
+                    timeout: timeout,
+                    password: password
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusDiv.innerHTML = `<span class="text-success"><i class="fas fa-check-circle"></i> ${data.message}</span>`;
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    statusDiv.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle"></i> ${data.message}</span>`;
+                }
+            })
+            .catch(error => {
+                statusDiv.innerHTML = `<span class="text-danger"><i class="fas fa-times-circle"></i> Error: ${error.message}</span>`;
+            });
+        }
+
+        function testConnection() {
+            const ip = document.getElementById('device-ip').value.trim();
+            const port = parseInt(document.getElementById('device-port').value) || 4370;
+            const password = document.getElementById('device-password').value.trim() || '';
+
+            if (!ip) {
+                alert('Please enter IP address first');
+                return;
+            }
+
+            const statusDiv = document.getElementById('device-status');
+            statusDiv.innerHTML = '<span class="text-info"><i class="fas fa-circle-notch fa-spin"></i> Testing...</span>';
+
+            fetch(`/api/device/test-connection/?ip=${ip}&port=${port}${password ? '&password=' + password : ''}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        statusDiv.innerHTML = `<span class="text-success"><i class="fas fa-check-circle"></i> Connection Successful!</span>`;
+                    } else {
+                        statusDiv.innerHTML = `<span class="text-warning"><i class="fas fa-exclamation-triangle"></i> ${data.message}</span>`;
+                    }
+                })
+                .catch(error => {
+                    statusDiv.innerHTML = `<span class="text-danger"><i class="fas fa-times"></i> Connection Failed</span>`;
+                });
+        }
+
+        function fetchEmployees() {
+            const statusDiv = document.getElementById('device-status');
+            statusDiv.innerHTML = '<span class="text-info"><i class="fas fa-circle-notch fa-spin"></i> Syncing employees...</span>';
+
+            fetch('/fetch-employees/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        statusDiv.innerHTML = `<span class="text-success"><i class="fas fa-check-circle"></i> ${data.message}</span>`;
+                    } else if (data.status === 'warning') {
+                        statusDiv.innerHTML = `<span class="text-warning"><i class="fas fa-exclamation-triangle"></i> ${data.message}</span>`;
+                    } else {
+                        statusDiv.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle"></i> ${data.message}</span>`;
+                    }
+                })
+                .catch(error => {
+                    statusDiv.innerHTML = `<span class="text-danger"><i class="fas fa-times-circle"></i> Error: ${error.message}</span>`;
+                });
+        }
+
+        function checkDeviceStatus(deviceId) {
+            // Add loading state to button
+            const btn = event.currentTarget;
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Checking...';
+            btn.disabled = true;
+
+            fetch(`/api/device/${deviceId}/status/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.is_online) {
+                        // Quick toast or alert is fine, but reload updates the UI status dot best
+                        window.location.reload();
+                    } else {
+                        alert(`Device is OFFLINE\nError: ${data.message || 'Connection failed'}`);
+                        window.location.reload();
+                    }
+                })
+                .catch(error => {
+                    alert('Error checking device status: ' + error.message);
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                });
+        }
+
+        function deleteDevice(deviceId, deviceName) {
+            if (!confirm(`Are you sure you want to remove "${deviceName}"?`)) {
+                return;
+            }
+
+            fetch(`/api/device/${deviceId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+            });
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>

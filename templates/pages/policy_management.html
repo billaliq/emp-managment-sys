@@ -1,0 +1,280 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy Management | Employee Information System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="{% static 'js/appearance.js' %}"></script>
+</head>
+<body>
+    {% include "pages/splash_screen.html" %}
+    <script src="{% static 'js/splash.js' %}"></script>
+
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    {% include "pages/sidebar.html" %}
+
+    <main class="main-content sidebar-{{ system_settings.sidebar_width|default:'normal' }}" id="mainContent">
+        {% include "pages/navigation.html" %}
+
+        <div class="page-content">
+            <div class="page-header fade-in-up">
+                <h1><i class="fas fa-book"></i> Policy Management</h1>
+                <p>Manage company policies and make them available to employees.</p>
+            </div>
+
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="content-card fade-in-up">
+                <div class="card-header">
+                    <h3 class="card-title">Company Policies</h3>
+                    <button class="btn btn-primary" onclick="openPolicyModal()">
+                        <i class="fas fa-plus"></i> Add New Policy
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Effective Date</th>
+                                <th>Version</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for policy in policies %}
+                            <tr>
+                                <td>
+                                    <strong>{{ policy.title }}</strong>
+                                    {% if policy.description %}
+                                    <br><small style="color: var(--text-light);">{{ policy.description|truncatewords:15 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ policy.get_category_display_name }}</td>
+                                <td>{{ policy.effective_date|date:"M d, Y" }}</td>
+                                <td><span class="badge">{{ policy.version }}</span></td>
+                                <td>
+                                    {% if policy.is_active %}
+                                    <span class="badge active">Active</span>
+                                    {% else %}
+                                    <span class="badge inactive">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <button class="btn btn-secondary" onclick="viewPolicy({{ policy.id }})" style="padding: 0.5rem 1rem; font-size: 0.8rem;">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-secondary" onclick="editPolicy({{ policy.id }})" style="padding: 0.5rem 1rem; font-size: 0.8rem;">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        {% if policy.document %}
+                                        <a href="{{ policy.document.url }}" class="btn btn-secondary" target="_blank" style="padding: 0.5rem 1rem; font-size: 0.8rem;">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-light);">
+                                    No policies found. Click "Add New Policy" to create one.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Policy Modal -->
+    <div class="modal" id="policyModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Add New Policy</h2>
+                <button class="close-btn" onclick="closePolicyModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="policyForm" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="action" id="formAction" value="create">
+                <input type="hidden" name="policy_id" id="policyId">
+
+                <div class="form-group">
+                    <label class="form-label">Policy Title *</label>
+                    <input type="text" class="form-input" name="title" id="policyTitle" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Category *</label>
+                    <select class="form-input" name="category" id="policyCategory" required>
+                        <option value="">Select Category</option>
+                        {% for value, label in categories %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Effective Date *</label>
+                    <input type="date" class="form-input" name="effective_date" id="policyEffectiveDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Short Description</label>
+                    <textarea class="form-input" name="description" id="policyDescription" rows="2"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Policy Summary *</label>
+                    <textarea class="form-input" name="summary" id="policySummary" rows="5" required placeholder="Enter a clear summary of the policy that will be available to employees..."></textarea>
+                    <small style="color: var(--text-light);">This summary will be used by the AI assistant to answer employee questions.</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Version</label>
+                    <input type="text" class="form-input" name="version" id="policyVersion" value="1.0">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Version Notes</label>
+                    <textarea class="form-input" name="version_notes" id="policyVersionNotes" rows="2" placeholder="Notes about this version or update..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Policy Document (PDF, DOCX, etc.)</label>
+                    <input type="file" class="form-input" name="document" id="policyDocument" accept=".pdf,.doc,.docx">
+                    <small style="color: var(--text-light);">Upload the full policy document if available.</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closePolicyModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Policy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Policy Modal -->
+    <div class="modal" id="viewPolicyModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="viewPolicyTitle">Policy Details</h2>
+                <button class="close-btn" onclick="closeViewPolicyModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="viewPolicyContent" style="padding: 1.5rem;">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Policy data (will be populated from server)
+        const policies = {
+            {% for policy in policies %}
+            {{ policy.id }}: {
+                title: "{{ policy.title|escapejs }}",
+                category: "{{ policy.category }}",
+                effective_date: "{{ policy.effective_date|date:'Y-m-d' }}",
+                description: "{{ policy.description|escapejs }}",
+                summary: "{{ policy.summary|escapejs }}",
+                version: "{{ policy.version }}",
+                version_notes: "{{ policy.version_notes|escapejs }}",
+                document: "{{ policy.document.url|default:'' }}",
+                is_active: {{ policy.is_active|lower }}
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        };
+
+        function openPolicyModal() {
+            document.getElementById('policyModal').style.display = 'flex';
+            document.getElementById('formAction').value = 'create';
+            document.getElementById('modalTitle').textContent = 'Add New Policy';
+            document.getElementById('policyForm').reset();
+            document.getElementById('policyId').value = '';
+        }
+
+        function closePolicyModal() {
+            document.getElementById('policyModal').style.display = 'none';
+        }
+
+        function editPolicy(policyId) {
+            const policy = policies[policyId];
+            if (!policy) return;
+
+            document.getElementById('policyModal').style.display = 'flex';
+            document.getElementById('formAction').value = 'update';
+            document.getElementById('modalTitle').textContent = 'Edit Policy';
+            document.getElementById('policyId').value = policyId;
+            document.getElementById('policyTitle').value = policy.title;
+            document.getElementById('policyCategory').value = policy.category;
+            document.getElementById('policyEffectiveDate').value = policy.effective_date;
+            document.getElementById('policyDescription').value = policy.description || '';
+            document.getElementById('policySummary').value = policy.summary;
+            document.getElementById('policyVersion').value = policy.version;
+            document.getElementById('policyVersionNotes').value = policy.version_notes || '';
+        }
+
+        function viewPolicy(policyId) {
+            const policy = policies[policyId];
+            if (!policy) return;
+
+            document.getElementById('viewPolicyTitle').textContent = policy.title;
+            document.getElementById('viewPolicyContent').innerHTML = `
+                <div style="margin-bottom: 1.5rem;">
+                    <strong>Category:</strong> ${policy.category}<br>
+                    <strong>Effective Date:</strong> ${new Date(policy.effective_date).toLocaleDateString()}<br>
+                    <strong>Version:</strong> ${policy.version}
+                </div>
+                ${policy.description ? `<div style="margin-bottom: 1.5rem;"><strong>Description:</strong><p>${policy.description}</p></div>` : ''}
+                <div style="margin-bottom: 1.5rem;">
+                    <strong>Summary:</strong>
+                    <p style="white-space: pre-wrap;">${policy.summary}</p>
+                </div>
+                ${policy.version_notes ? `<div style="margin-bottom: 1.5rem;"><strong>Version Notes:</strong><p>${policy.version_notes}</p></div>` : ''}
+                ${policy.document ? `<div><a href="${policy.document}" target="_blank" class="btn btn-primary"><i class="fas fa-download"></i> Download Document</a></div>` : ''}
+            `;
+            document.getElementById('viewPolicyModal').style.display = 'flex';
+        }
+
+        function closeViewPolicyModal() {
+            document.getElementById('viewPolicyModal').style.display = 'none';
+        }
+
+        // Close modals on outside click
+        window.onclick = function(event) {
+            const policyModal = document.getElementById('policyModal');
+            const viewModal = document.getElementById('viewPolicyModal');
+            if (event.target == policyModal) {
+                closePolicyModal();
+            }
+            if (event.target == viewModal) {
+                closeViewPolicyModal();
+            }
+        }
+    </script>
+</body>
+</html>
+

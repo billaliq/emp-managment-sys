@@ -1,0 +1,172 @@
+{% load static %}
+
+
+<div class="dashboard">
+    <aside class="sidebar sidebar-{{ system_settings.sidebar_width|default:'normal' }}" id="sidebar">
+        <div class="sidebar-header">
+            <div class="company-brand">
+                <div class="brand-icon">
+                    <i class="fas fa-building"></i>
+                </div>
+                <h2>
+                    <span class="company-name-line">Funprime</span>
+                    <span class="company-name-line">Technology</span>
+                </h2>
+                <p>Employee Information System</p>
+            </div>
+
+            <div class="user-role-badge">
+                {% if is_admin %}
+                <span class="badge superuser-badge">Super User</span>
+                {% elif user_role == 'admin' %}
+                <span class="badge admin-badge">Admin</span>
+                {% elif user_role == 'hr' %}
+                <span class="badge hr-badge">HR</span>
+                {% else %}
+                <span class="badge employee-badge">Employee</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+
+            <!-- Dashboard -->
+            <div class="nav-item">
+                <a href="{% url 'dashboard' %}" class="nav-link">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+            </div>
+
+            <!-- Employees (Admin & HR) -->
+            {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+            <!-- Profile (Admin & HR) -->
+            <div class="nav-item">
+                <a href="{% url 'employee_profile' %}" class="nav-link">
+                    <i class="fas fa-id-card"></i> Employee Profile
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a href="#" class="nav-link" id="employeesMenu">
+                    <i class="fas fa-users"></i> Employees
+                    <i class="fas fa-chevron-right arrow"></i>
+                </a>
+                <div class="submenu" id="employeesSubmenu">
+                    <a href="{% url 'add_employee' %}" class="nav-link">Add Employee</a>
+                    <a href="{% url 'positions' %}" class="nav-link">Positions</a>
+                    <a href="{% url 'team' %}" class="nav-link">Teams</a>
+                </div>
+            </div>
+            {% else %}
+            <!-- Profile & Attendance (for regular employees) -->
+            <div class="nav-item">
+                <a href="{% url 'employee_profile' %}" class="nav-link">
+                    <i class="fas fa-user-circle"></i> Profile &amp; Attendance
+                </a>
+            </div>
+
+            <!-- Employee Information (for regular employees) -->
+            <div class="nav-item">
+                <a href="{% url 'add_employee' %}" class="nav-link">
+                    <i class="fas fa-user-edit"></i> My Information
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Departments -->
+            {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+            <div class="nav-item">
+                <a href="{% url 'departments' %}" class="nav-link">
+                    <i class="fas fa-building"></i> Departments
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Attendance -->
+            {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+            <div class="nav-item">
+                <a href="{% url 'attendance' %}" class="nav-link">
+                    <i class="fas fa-calendar-alt"></i> Attendance
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Payroll (accessible to all users, data is scoped) -->
+            <div class="nav-item">
+                <a href="{% url 'payroll' %}" class="nav-link">
+                    <i class="fas fa-money-bill-wave"></i> Payroll
+                </a>
+            </div>
+
+            <!-- Loans -->
+            <div class="nav-item">
+                <a href="{% url 'loans' %}" class="nav-link">
+                    <i class="fas fa-hand-holding-usd"></i> Loans
+                </a>
+            </div>
+
+            <!-- Reports -->
+            <div class="nav-item">
+                <a href="{% url 'reports' %}" class="nav-link">
+                    <i class="fas fa-chart-bar"></i> Reports
+                </a>
+            </div>
+
+            <!-- AI Assistant -->
+            <div class="nav-item">
+                <a href="{% url 'ai_assistant' %}" class="nav-link">
+                    <i class="fas fa-robot"></i> AI Assistant
+                </a>
+            </div>
+
+            <!-- Device Management (Admin/HR only) -->
+            {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+            <div class="nav-item">
+                <a href="#" class="nav-link" id="deviceMenu">
+                    <i class="fas fa-fingerprint"></i> Device Management
+                    <i class="fas fa-chevron-right arrow"></i>
+                </a>
+                <div class="submenu" id="deviceSubmenu">
+                    <a href="{% url 'device_management' %}" class="nav-link">Manage Devices</a>
+                    <a href="{% url 'device_enrollment' %}" class="nav-link">Enrollment</a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Policy Management (Admin/HR only) -->
+            {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+            <div class="nav-item">
+                <a href="{% url 'policy_management' %}" class="nav-link">
+                    <i class="fas fa-book"></i> Policy Management
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Complaints -->
+            <div class="nav-item">
+                <a href="{% url 'view_complaints' %}" class="nav-link">
+                    <i class="fas fa-exclamation-triangle"></i> Complaints
+                </a>
+            </div>
+
+            <!-- Settings -->
+            {% if is_admin or user_role == 'admin' %}
+            <div class="nav-item">
+                <a href="{% url 'settings' %}" class="nav-link">
+                    <i class="fas fa-cog"></i> Settings
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Logout -->
+            <div class="nav-item logout-nav-item">
+                <a href="{% url 'logout' %}" class="nav-link logout-link" onclick="return confirmLogout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+
+        </nav>
+    </aside>
+</div>
+
+<script src="{% static 'js/scripte.js' %}"></script>

@@ -1,0 +1,289 @@
+{% load static %}
+{% load settings_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ employee.firstname }} {{ employee.lastname }} - Attendance Records | EIS</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/attendance.css' %}">
+    <script src="{% static 'js/appearance.js' %}"></script>
+</head>
+<body>
+    {% include "pages/sidebar.html" %}
+
+    <main class="main-content sidebar-{{ system_settings.sidebar_width|default:'normal' }}" id="mainContent">
+        {% include "pages/navigation.html" %}
+
+        <div class="page-content attendance-page">
+            <div class="page-header fade-in-up">
+                <div>
+                    <h1><i class="fas fa-user"></i> {% if is_own_profile %}My Attendance Records{% else %}{{ employee.firstname }} {{ employee.lastname }} - Attendance Records{% endif %}</h1>
+                    <p>Employee Code: <strong>{{ employee.code }}</strong> | Department: <strong>{{ employee.department.name|default:"N/A" }}</strong></p>
+                </div>
+                <div class="header-actions">
+                    {% if is_own_profile %}
+                    <a href="{% url 'employee_profile' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Profile
+                    </a>
+                    {% else %}
+                    <a href="{% url 'employee_profile' %}?q={{ employee.code }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Profile
+                    </a>
+                    <a href="{% url 'attendance' %}" class="btn btn-secondary">
+                        <i class="fas fa-calendar-alt"></i> All Attendance
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Attendance Statistics -->
+            {% if attendance_stats %}
+            <div class="stats-grid fade-in-up" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 2rem; font-weight: 700;">{{ attendance_stats.monthly_present|default:0 }}</div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">Present Days (This Month)</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 1.5rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 2rem; font-weight: 700;">{{ attendance_stats.monthly_rate|default:0 }}%</div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">Monthly Attendance Rate</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 1.5rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 2rem; font-weight: 700;">{{ attendance_stats.total_attendance|default:0 }}</div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">Total Records</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 1.5rem; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 2rem; font-weight: 700;">{{ attendance_stats.total_present|default:0 }}</div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">Total Present Days</div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="content-card fade-in-up">
+                <div class="card-header">
+                    <h3>Attendance Records</h3>
+                    <div class="header-actions">
+                        <div class="pagination-controls" style="display: flex; align-items: center; gap: 1rem;">
+                            <label for="perPageSelect" style="margin: 0; font-size: 0.9rem; color: var(--text-light);">Show:</label>
+                            <select id="perPageSelect" class="form-select" style="width: auto; min-width: 80px;" onchange="updatePerPage(this.value)">
+                                <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                                <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                                <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                                <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                                <option value="200" {% if per_page == 200 %}selected{% endif %}>200</option>
+                            </select>
+                            <span style="font-size: 0.9rem; color: var(--text-light);">
+                                {% if attendance_records_paginated %}
+                                    Showing {{ attendance_records_paginated.start_index }} - {{ attendance_records_paginated.end_index }} of {{ attendance_records_paginated.paginator.count }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        <button class="btn btn-secondary" id="toggleFiltersBtn" onclick="toggleFilters()">
+                            <i class="fas fa-filter"></i> Filters
+                        </button>
+                    </div>
+                </div>
+
+                <div class="filter-section" id="filterSection" style="display:none; padding: 1rem; background: var(--bg-secondary); border-radius: 8px; margin-bottom: 1rem;">
+                    <form method="get" action="{% url 'employee_attendance' employee.id %}">
+                        <div class="filter-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <div class="filter-group">
+                                <label>Date From</label>
+                                <input type="date" name="date_from" value="{{ date_from }}" class="filter-input">
+                            </div>
+                            <div class="filter-group">
+                                <label>Date To</label>
+                                <input type="date" name="date_to" value="{{ date_to }}" class="filter-input">
+                            </div>
+                            <div class="filter-group">
+                                <label>Status</label>
+                                <select name="status" class="filter-input">
+                                    <option value="">All</option>
+                                    <option value="present" {% if status_filter == 'present' %}selected{% endif %}>Present</option>
+                                    <option value="absent" {% if status_filter == 'absent' %}selected{% endif %}>Absent</option>
+                                    <option value="weekend" {% if status_filter == 'weekend' %}selected{% endif %}>Weekend Work</option>
+                                </select>
+                            </div>
+                            <div class="filter-actions" style="display: flex; align-items: flex-end; gap: 0.5rem;">
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Apply</button>
+                                <a href="{% url 'employee_attendance' employee.id %}" class="btn btn-secondary"><i class="fas fa-times"></i> Clear</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Check-In</th>
+                                <th>Check-Out</th>
+                                <th>Work Duration</th>
+                                <th>Overtime</th>
+                                <th>Late In</th>
+                                <th>Early Out</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in attendance_records %}
+                            <tr class="{% if record.is_weekend_date %}weekend-row{% endif %}" data-date="{{ record.date|date:'Y-m-d' }}" data-status="{{ record.status }}">
+                                <td>{{ record.date|format_date }}<br><small style="color: #6c757d;">{{ record.date|date:"l" }}</small></td>
+                                <td>
+                                    {% if record.is_weekend_date %}
+                                        {# Weekend date: Show status only if employee arrived (has check-in or check-out) #}
+                                        {% if record.check_in_time or record.check_out_time %}
+                                            {# Weekend with attendance: Show Present (or Late/Early-out/etc) AND Weekend #}
+                                            {% if record.status == 'late' %}
+                                                <span class="badge badge-warning">Late</span>
+                                            {% elif record.status == 'early-out' %}
+                                                <span class="badge badge-warning">Early Out</span>
+                                            {% elif record.status == 'late-sitting' %}
+                                                <span class="badge badge-info">Late Sitting</span>
+                                            {% elif record.status == 'early-in' %}
+                                                <span class="badge badge-info">Early In</span>
+                                            {% else %}
+                                                <span class="badge badge-success">Present</span>
+                                            {% endif %}
+                                            <span class="badge weekend" style="margin-left: 0.25rem;"><i class="fas fa-calendar-week"></i> Weekend</span>
+                                            {% if record.is_holiday_date %}
+                                                <span class="badge holiday" style="margin-left: 0.25rem;" title="{{ record.holiday_name|default:'Holiday' }}">
+                                                    <i class="fas fa-calendar-check"></i> Holiday
+                                                </span>
+                                            {% endif %}
+                                        {% else %}
+                                            {# Weekend without attendance: Show nothing #}
+                                            <span class="text-muted">--</span>
+                                        {% endif %}
+                                    {% else %}
+                                        {# Weekday: Show normal status #}
+                                        {% if record.status == 'present' %}
+                                            <span class="badge badge-success">Present</span>
+                                        {% elif record.status == 'absent' %}
+                                            <span class="badge badge-danger">Absent</span>
+                                        {% elif record.status == 'late' %}
+                                            <span class="badge badge-warning">Late</span>
+                                        {% elif record.status == 'leave' %}
+                                            <span class="badge badge-info">On Leave</span>
+                                        {% elif record.status == 'early-out' %}
+                                            <span class="badge badge-warning">Early Out</span>
+                                        {% elif record.status == 'late-sitting' %}
+                                            <span class="badge badge-info">Late Sitting</span>
+                                        {% elif record.status == 'early-in' %}
+                                            <span class="badge badge-info">Early In</span>
+                                        {% else %}
+                                            <span class="badge badge-secondary">{{ record.get_status_display }}</span>
+                                        {% endif %}
+                                        {% if record.is_holiday_date %}
+                                            <span class="badge holiday" style="margin-left: 0.25rem;" title="{{ record.holiday_name|default:'Holiday' }}">
+                                                <i class="fas fa-calendar-check"></i> Holiday
+                                            </span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>{{ record.check_in_time|format_time }}</td>
+                                <td>{{ record.check_out_time|format_time }}</td>
+                                <td>{{ record.duration|default:"--" }}</td>
+                                <td>
+                                    {% if record.overtime_hours and record.overtime_hours > 0 %}
+                                        <span class="badge overtime">{{ record.overtime_display }}</span>
+                                    {% else %}
+                                        <span class="text-muted">--</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.late_in %}
+                                        <span class="text-warning">{{ record.late_in_display }}</span>
+                                    {% else %}
+                                        <span class="text-muted">--</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.early_out %}
+                                        <span class="text-warning">{{ record.early_out_display }}</span>
+                                    {% else %}
+                                        <span class="text-muted">--</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ record.notes|default:"--"|truncatewords:10 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" style="text-align: center; padding: 2rem; color: #6c757d;">
+                                    <i class="fas fa-calendar-times" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+                                    No attendance records found.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if attendance_records_paginated.has_other_pages %}
+                <div class="pagination-wrapper" style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div class="pagination-info" style="font-size: 0.9rem; color: var(--text-light);">
+                        Page {{ attendance_records_paginated.number }} of {{ attendance_records_paginated.paginator.num_pages }}
+                    </div>
+                    <nav class="pagination" style="display: flex; gap: 0.5rem;">
+                        {% if attendance_records_paginated.has_previous %}
+                            <a href="?page=1&per_page={{ per_page }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-angle-double-left"></i> First
+                            </a>
+                            <a href="?page={{ attendance_records_paginated.previous_page_number }}&per_page={{ per_page }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-angle-left"></i> Previous
+                            </a>
+                        {% endif %}
+
+                        {% for num in attendance_records_paginated.paginator.page_range %}
+                            {% if attendance_records_paginated.number == num %}
+                                <span class="btn btn-primary btn-sm">{{ num }}</span>
+                            {% elif num > attendance_records_paginated.number|add:'-3' and num < attendance_records_paginated.number|add:'3' %}
+                                <a href="?page={{ num }}&per_page={{ per_page }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-secondary btn-sm">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if attendance_records_paginated.has_next %}
+                            <a href="?page={{ attendance_records_paginated.next_page_number }}&per_page={{ per_page }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-secondary btn-sm">
+                                Next <i class="fas fa-angle-right"></i>
+                            </a>
+                            <a href="?page={{ attendance_records_paginated.paginator.num_pages }}&per_page={{ per_page }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-secondary btn-sm">
+                                Last <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        {% endif %}
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function toggleFilters() {
+            const filterSection = document.getElementById('filterSection');
+            filterSection.style.display = filterSection.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function updatePerPage(value) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('per_page', value);
+            url.searchParams.set('page', '1');
+            window.location.href = url.toString();
+        }
+    </script>
+</body>
+</html>
+
+

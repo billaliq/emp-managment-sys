@@ -1,0 +1,630 @@
+{% load static %}
+{% load settings_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Payroll</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/payroll.css' %}">
+  <script src="{% static 'js/appearance.js' %}"></script>
+</head>
+<body>
+  {% include "pages/splash_screen.html" %}
+  <script src="{% static 'js/splash.js' %}"></script>
+
+  <style>
+    /* Tiny modal/table styles to make UI usable — replace with your existing styles if you have them */
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); align-items:center; justify-content:center; }
+    .modal.active { display: flex; }
+    .modal-content { background: #fff; padding: 16px; width: 700px; max-width: 95%; border-radius: 6px; }
+    .btn { padding: 6px 10px; margin: 4px; cursor: pointer; }
+    .badge.success { background: #d4edda; padding: 4px 8px; border-radius: 4px; }
+    .badge.warning { background: #fff3cd; padding: 4px 8px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  {% include "pages/sidebar.html" %}
+
+  <main class="main-content sidebar-{{ system_settings.sidebar_width|default:'normal' }}" id="mainContent">
+    {% include "pages/navigation.html" %}
+
+    <div class="page-content">
+      <div class="page-header fade-in-up">
+      <div>
+          <h1>Payroll Management</h1>
+          <p>Manage employee payroll and payment records</p>
+        </div>
+        <div class="header-actions">
+          {% if is_admin_user or is_finance_user %}
+          <a href="{% url 'payroll_print' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}"
+             class="btn btn-secondary" target="_blank">
+            <i class="fas fa-print"></i> Print All
+          </a>
+          <a href="{% url 'payroll_export_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}"
+             class="btn btn-secondary">
+            <i class="fas fa-file-csv"></i> Export CSV
+          </a>
+          <a href="{% url 'payroll_export_excel' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}"
+             class="btn btn-secondary">
+            <i class="fas fa-file-excel"></i> Export Excel
+          </a>
+          {% endif %}
+          {% if is_finance_user %}
+          <button class="btn btn-success" id="bulkDisbursementBtn" style="background: #28a745;">
+            <i class="fas fa-money-bill-wave"></i> Bulk Salary Disbursement
+          </button>
+          {% endif %}
+          {% if is_admin_user %}
+          <button class="btn btn-primary" id="processPayrollBtn">
+            <i class="fas fa-calculator"></i> Process Payroll
+          </button>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Advanced Filters -->
+      <div class="content-card fade-in-up" style="margin-bottom: 20px;">
+        <div class="card-header">
+          <h3><i class="fas fa-filter"></i> Filters</h3>
+        </div>
+        <form method="GET" action="{% url 'payroll' %}" id="payrollFilterForm" style="padding: 15px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            {% if is_admin_user %}
+            <div>
+              <label style="display: block; margin-bottom: 5px; font-weight: 600;">Search (Name/ID/Email)</label>
+              <input type="text" name="search" class="form-input"
+                     value="{{ search_query }}"
+                     placeholder="Search employees...">
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 5px; font-weight: 600;">Employee</label>
+              <select name="employee_id" class="form-input">
+                <option value="">All Employees</option>
+                {% for emp in employees_list %}
+                <option value="{{ emp.id }}" {% if filters.employee_id == emp.id|stringformat:"s" %}selected{% endif %}>
+                  {{ emp.firstname }} {{ emp.lastname|default:"" }} ({{ emp.code|default:emp.id }})
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 5px; font-weight: 600;">Department</label>
+              <select name="department" class="form-input">
+                <option value="">All Departments</option>
+                {% for dept in departments %}
+                <option value="{{ dept.id }}" {% if filters.department_id == dept.id|stringformat:"s" %}selected{% endif %}>
+                  {{ dept.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            {% else %}
+            <div>
+              <label style="display: block; margin-bottom: 5px; font-weight: 600;">Employee</label>
+              <input type="text" class="form-input" value="{% if current_employee %}{{ current_employee.firstname }} {{ current_employee.lastname|default:'' }} ({{ current_employee.code|default:current_employee.id }}){% else %}My Payroll{% endif %}" readonly>
+            </div>
+            {% endif %}
+            <div>
+              <label style="display: block; margin-bottom: 5px; font-weight: 600;">Status</label>
+              <select name="status" class="form-input">
+                <option value="">All Statuses</option>
+                <option value="paid" {% if filters.status == 'paid' %}selected{% endif %}>Paid</option>
+                <option value="pending" {% if filters.status == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="failed" {% if filters.status == 'failed' %}selected{% endif %}>Failed</option>
+              </select>
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 5px; font-weight: 600;">Month</label>
+              <input type="number" name="month" class="form-input"
+                     value="{{ filters.month }}"
+                     placeholder="MM" min="1" max="12">
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 5px; font-weight: 600;">Year</label>
+              <input type="number" name="year" class="form-input"
+                     value="{{ filters.year|default:timezone.now.year }}"
+                     placeholder="YYYY" min="2000" max="2100">
+            </div>
+          </div>
+          <div style="margin-top: 15px; display: flex; gap: 10px;">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-search"></i> Apply Filters
+            </button>
+            <a href="{% url 'payroll' %}" class="btn btn-secondary">
+              <i class="fas fa-times"></i> Clear Filters
+            </a>
+          </div>
+        </form>
+      </div>
+
+      <div class="content-card fade-in-up">
+        <div class="card-header" style="align-items:center; gap:12px;">
+          <h3>{% if is_admin_user %}Payroll Records{% else %}My Salary Records{% endif %}</h3>
+          <div style="font-size:.9rem; color:var(--text-light); width:100%; margin-top:8px;">
+            <strong>Recent Payrolls:</strong>
+        {% for p in recent_payrolls %}
+              <span style="margin-left:8px;">{{ p.pay_date|format_date }} ({{ p.pay_period }})</span>
+        {% empty %}
+              <span style="margin-left:8px;">— none</span>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="table" id="payrollTable">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Base Salary</th>
+            <th>Allowances</th>
+            <th>Deductions</th>
+            <th>Net Salary</th>
+            <th>Pay Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+              {% for r in payroll_records %}
+              <tr data-record-id="{{ r.id }}">
+                <td>{{ r.employee.firstname }} {{ r.employee.lastname }} ({{ r.employee.code|default:r.employee.id }})</td>
+                <td>PKR {{ r.base_salary|floatformat:2 }}</td>
+                <td>PKR {{ r.allowances|floatformat:2 }}</td>
+                <td>PKR {{ r.deductions|floatformat:2 }}</td>
+                <td>PKR {{ r.net_salary|floatformat:2 }}</td>
+                <td>{{ r.pay_date|format_date }}</td>
+                <td>
+                  {% if r.status == 'paid' %}
+                    <span class="badge success">Paid</span>
+                  {% elif r.status == 'pending' %}
+                    <span class="badge warning">Pending</span>
+                  {% else %}
+                    <span class="badge danger">Failed</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <a href="{% url 'payroll_record_detail' r.id %}" class="btn btn-secondary" title="View Details">
+                    <i class="fas fa-eye"></i> View
+                  </a>
+                  {% if is_admin_user %}
+                  <a href="{% url 'payroll_print_record' r.id %}" class="btn btn-secondary" target="_blank" title="Print">
+                    <i class="fas fa-print"></i> Print
+                  </a>
+                  <button class="btn btn-secondary" data-action="edit" title="Edit">
+                    <i class="fas fa-edit"></i> Edit
+                  </button>
+                  {% else %}
+                  {% with r.salary_slip_requests.all|first as slip %}
+                    {% if slip and slip.status == 'approved' %}
+                      <a href="{% url 'payroll_print_record' r.id %}" class="btn btn-secondary" target="_blank" title="Print Salary Slip">
+                        <i class="fas fa-print"></i> Print Slip
+                      </a>
+                    {% elif slip and slip.status == 'pending' %}
+                      <span class="badge warning">Slip Requested (Pending)</span>
+                    {% elif slip and slip.status == 'rejected' %}
+                      <span class="badge danger">Slip Rejected</span>
+                    {% else %}
+                      <form method="post" action="{% url 'request_salary_slip' r.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary">
+                          <i class="fas fa-file-alt"></i> Request Salary Slip
+                        </button>
+                      </form>
+                    {% endif %}
+                  {% endwith %}
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="8">No payroll records found. Try adjusting your filters.</td></tr>
+              {% endfor %}
+        </tbody>
+      </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Process Payroll Modal (Admin/HR only) -->
+  {% if is_admin_user %}
+  <div class="modal" id="processPayrollModal" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-modal="true">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3>Process Payroll</h3>
+        <button class="btn" id="closePayrollModal">Close</button>
+      </div>
+      <form id="payrollForm">
+        {% csrf_token %}
+        <div style="display:flex; gap:12px; margin-bottom:8px;">
+          <div style="flex:1;">
+            <label>Pay Period</label>
+            <select id="payPeriod" name="pay_period" required>
+              <option value="monthly">Monthly</option>
+              <option value="bi-weekly">Bi-Weekly</option>
+              <option value="weekly">Weekly</option>
+            </select>
+          </div>
+          <div style="flex:1;">
+            <label>Pay Date</label>
+            <input id="payDate" name="pay_date" type="date" required />
+          </div>
+        </div>
+
+        <div style="margin-bottom:8px;">
+          <label>Employees (Hold Ctrl to multi-select)</label><br/>
+          <select id="payEmployees" name="employees" multiple size="8" style="width:100%;">
+            <option value="all">All Employees</option>
+            {% for emp in employees %}
+              <option value="{{ emp.id }}">{{ emp.firstname }} {{ emp.lastname }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+          <button type="button" id="cancelPayrollBtn" class="btn">Cancel</button>
+          <button type="submit" class="btn">Process</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- View Modal -->
+  <div class="modal" id="viewPayrollModal">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between;">
+        <h3>Payroll Record</h3>
+        <button class="btn" id="closeViewPayrollModal">Close</button>
+      </div>
+      <div id="viewPayrollContent"></div>
+    </div>
+  </div>
+
+  <!-- Edit Modal (Admin/HR only) -->
+  {% if is_admin_user %}
+  <div class="modal" id="editPayrollModal">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between;">
+        <h3>Edit Payroll Record</h3>
+        <button class="btn" id="closeEditPayrollModal">Close</button>
+      </div>
+      <form id="editPayrollForm">
+        {% csrf_token %}
+        <input type="hidden" id="editRecordId" name="record_id" />
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div>
+            <label>Base Salary</label><br/>
+            <input id="editBase" name="base_salary" type="number" step="0.01"/>
+          </div>
+          <div>
+            <label>Allowances</label><br/>
+            <input id="editAllowances" name="allowances" type="number" step="0.01"/>
+          </div>
+          <div>
+            <label>Deductions</label><br/>
+            <input id="editDeductions" name="deductions" type="number" step="0.01"/>
+          </div>
+          <div>
+            <label>Net Salary</label><br/>
+            <input id="editNet" name="net_salary" readonly />
+          </div>
+        </div>
+
+        <div style="margin-top:8px;">
+          <label>Status</label>
+          <select id="editStatus" name="status">
+            <option value="paid">Paid</option>
+            <option value="pending">Pending</option>
+            <option value="failed">Failed</option>
+          </select>
+        </div>
+
+        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+          <button type="button" id="cancelEditPayrollBtn" class="btn">Cancel</button>
+          <button type="submit" class="btn">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <script>
+    // Minimal inline JS to submit forms to existing endpoints
+    function getCookie(name){const v=document.cookie.match('(^|;)\\s*'+name+'\\s*=\\s*([^;]+)');return v?v.pop():''}
+    const csrftoken=getCookie('csrftoken');
+    document.addEventListener('DOMContentLoaded',function(){
+      const payrollForm=document.getElementById('payrollForm');
+      const processPayrollModal=document.getElementById('processPayrollModal');
+      const processPayrollBtn=document.getElementById('processPayrollBtn');
+      const closePayrollModal=document.getElementById('closePayrollModal');
+      const cancelPayrollBtn=document.getElementById('cancelPayrollBtn');
+      if(processPayrollBtn)processPayrollBtn.addEventListener('click',()=>processPayrollModal.classList.add('active'));
+      if(closePayrollModal)closePayrollModal.addEventListener('click',()=>processPayrollModal.classList.remove('active'));
+      if(cancelPayrollBtn)cancelPayrollBtn.addEventListener('click',()=>processPayrollModal.classList.remove('active'));
+      if(payrollForm){
+        payrollForm.addEventListener('submit',async function(e){
+          e.preventDefault();
+          const fd=new FormData(payrollForm);
+          const sel=document.getElementById('payEmployees');
+          if(sel){Array.from(sel.selectedOptions).forEach(o=>fd.append('employees',o.value));}
+          const res=await fetch('/payroll/process/',{method:'POST',headers:{'X-CSRFToken':csrftoken},body:fd});
+          if(res.ok){location.reload();}else{alert('Failed to process payroll');}
+        });
+      }
+
+      const table=document.getElementById('payrollTable');
+      const payrollSearch=document.getElementById('payrollSearch');
+      const payrollSearchForm=document.getElementById('payrollSearchForm');
+      const editPayrollModal=document.getElementById('editPayrollModal');
+      const viewPayrollModal=document.getElementById('viewPayrollModal');
+      const viewPayrollContent=document.getElementById('viewPayrollContent');
+      const closeViewPayrollModal=document.getElementById('closeViewPayrollModal');
+      const closeEditPayrollModal=document.getElementById('closeEditPayrollModal');
+      const cancelEditPayrollBtn=document.getElementById('cancelEditPayrollBtn');
+      const editPayrollForm=document.getElementById('editPayrollForm');
+      const editBase=document.getElementById('editBase');
+      const editAllowances=document.getElementById('editAllowances');
+      const editDeductions=document.getElementById('editDeductions');
+      const editNet=document.getElementById('editNet');
+      const editStatus=document.getElementById('editStatus');
+
+      function calcEditNet(){const b=parseFloat(editBase.value)||0;const a=parseFloat(editAllowances.value)||0;const d=parseFloat(editDeductions.value)||0;editNet.value=(b+a-d).toFixed(2)}
+      ;['input','change'].forEach(ev=>{if(editBase)editBase.addEventListener(ev,calcEditNet);if(editAllowances)editAllowances.addEventListener(ev,calcEditNet);if(editDeductions)editDeductions.addEventListener(ev,calcEditNet);});
+
+      if(table){
+        function renderPayrollRows(records){
+          const tbody=table.querySelector('tbody');
+          if(!tbody) return;
+          if(!records || records.length===0){ tbody.innerHTML='<tr><td colspan="8">No payroll records.</td></tr>'; return; }
+          tbody.innerHTML=records.map(r=>`
+            <tr data-record-id="${r.id}">
+              <td>${r.employee_name}</td>
+              <td>$${Number(r.base_salary||0).toFixed(2)}</td>
+              <td>$${Number(r.allowances||0).toFixed(2)}</td>
+              <td>$${Number(r.deductions||0).toFixed(2)}</td>
+              <td>$${Number(r.net_salary||0).toFixed(2)}</td>
+              <td>${r.pay_date}</td>
+              <td><span class="badge ${r.status==='paid'?'success':(r.status==='pending'?'warning':'danger')}">${r.status}</span></td>
+              <td>
+                <button class="btn btn-secondary" data-action="view">View</button>
+                <button class="btn btn-secondary" data-action="edit">Edit</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+
+        async function fetchPayrolls(params){
+          const url='/api/payrolls/?'+new URLSearchParams(params).toString();
+          const res=await fetch(url,{headers:{'Accept':'application/json'}});
+          if(!res.ok) return;
+          const data=await res.json();
+          renderPayrollRows(data.records||[]);
+        }
+
+        if(payrollSearchForm){
+          payrollSearchForm.addEventListener('submit',function(e){
+            e.preventDefault();
+            const q=payrollSearch.value||'';
+            fetchPayrolls({employee:q});
+          });
+        }
+        table.addEventListener('click',function(e){
+          const btn=e.target.closest('button'); if(!btn) return; const tr=btn.closest('tr'); if(!tr) return;
+          const action=btn.dataset.action; const cells=tr.cells; const recId=tr.getAttribute('data-record-id');
+          if(action==='view'){
+            viewPayrollContent.innerHTML='<p><strong>Employee:</strong> '+cells[0].innerText+'</p>'+
+              '<p><strong>Base Salary:</strong> '+cells[1].innerText+'</p>'+
+              '<p><strong>Allowances:</strong> '+cells[2].innerText+'</p>'+
+              '<p><strong>Deductions:</strong> '+cells[3].innerText+'</p>'+
+              '<p><strong>Net Salary:</strong> '+cells[4].innerText+'</p>'+
+              '<p><strong>Pay Date:</strong> '+cells[5].innerText+'</p>'+
+              '<p><strong>Status:</strong> '+cells[6].innerText+'</p>';
+            viewPayrollModal.classList.add('active');
+          } else if(action==='edit'){
+            document.getElementById('editRecordId').value=recId;
+            editBase.value=(cells[1].innerText||'').replace(/[^0-9.-]/g,'');
+            editAllowances.value=(cells[2].innerText||'').replace(/[^0-9.-]/g,'');
+            editDeductions.value=(cells[3].innerText||'').replace(/[^0-9.-]/g,'');
+            editNet.value=(cells[4].innerText||'').replace(/[^0-9.-]/g,'');
+            editStatus.value=(cells[6].innerText||'').trim().toLowerCase();
+            editPayrollModal.classList.add('active');
+          }
+        });
+      }
+
+      if(closeViewPayrollModal) closeViewPayrollModal.addEventListener('click',()=>viewPayrollModal.classList.remove('active'));
+      if(closeEditPayrollModal) closeEditPayrollModal.addEventListener('click',()=>editPayrollModal.classList.remove('active'));
+      if(cancelEditPayrollBtn) cancelEditPayrollBtn.addEventListener('click',()=>editPayrollModal.classList.remove('active'));
+
+      if(editPayrollForm){
+        editPayrollForm.addEventListener('submit',async function(e){
+          e.preventDefault();
+          const id=document.getElementById('editRecordId').value;
+          const fd=new FormData();
+          fd.append('base_salary', editBase.value||0);
+          fd.append('allowances', editAllowances.value||0);
+          fd.append('deductions', editDeductions.value||0);
+          fd.append('status', editStatus.value||'pending');
+          const res=await fetch(`/payroll/record/update/${id}/`, {method:'POST', headers:{'X-CSRFToken':csrftoken}, body:fd});
+          if(res.ok){ location.reload(); } else { alert('Failed to update'); }
+        });
+      }
+    });
+  </script>
+
+  <!-- Bulk Salary Disbursement (Finance/Admin/Superuser only) -->
+  {% if is_finance_user %}
+  <script>
+  const bulkDisbursementBtn = document.getElementById('bulkDisbursementBtn');
+  const bulkDisbursementModal = document.createElement('div');
+  bulkDisbursementModal.className = 'modal';
+  bulkDisbursementModal.id = 'bulkDisbursementModal';
+  bulkDisbursementModal.innerHTML = `
+    <div class="modal-content" style="max-width: 900px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h3><i class="fas fa-money-bill-wave"></i> Bulk Salary Disbursement</h3>
+        <button class="btn" onclick="document.getElementById('bulkDisbursementModal').classList.remove('active')">×</button>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label><strong>Select Payroll Records to Disburse:</strong></label>
+        <div style="max-height:400px; overflow-y:auto; border:1px solid #ddd; padding:10px; margin-top:10px;">
+          <table class="table" style="width:100%;">
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="selectAllRecords"></th>
+                <th>Employee</th>
+                <th>Amount</th>
+                <th>Pay Date</th>
+                <th>Status</th>
+                <th>Bank Account</th>
+              </tr>
+            </thead>
+            <tbody id="disbursementRecordsList"></tbody>
+          </table>
+        </div>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label><strong>Payment Method:</strong></label>
+        <select id="paymentMethod" class="form-input" style="width:100%; margin-top:5px;">
+          <option value="bank_api">Bank API (Automatic)</option>
+          <option value="manual">Manual Transfer</option>
+        </select>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label><strong>Notes (Optional):</strong></label>
+        <textarea id="disbursementNotes" class="form-input" rows="3" style="width:100%; margin-top:5px;" placeholder="Add any notes about this disbursement..."></textarea>
+      </div>
+      <div id="disbursementSummary" style="background:#f8f9fa; padding:15px; border-radius:5px; margin-bottom:20px;">
+        <strong>Summary:</strong>
+        <div style="margin-top:10px;">
+          <div>Total Records Selected: <span id="selectedCount">0</span></div>
+          <div>Total Amount: $<span id="totalAmount">0.00</span></div>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="document.getElementById('bulkDisbursementModal').classList.remove('active')">Cancel</button>
+        <button class="btn btn-success" id="confirmDisbursementBtn" style="background:#28a745;">
+          <i class="fas fa-paper-plane"></i> Initiate Disbursement
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(bulkDisbursementModal);
+
+  if (bulkDisbursementBtn) {
+    bulkDisbursementBtn.addEventListener('click', function() {
+      loadDisbursementRecords();
+      bulkDisbursementModal.classList.add('active');
+    });
+  }
+
+  function loadDisbursementRecords() {
+    const tbody = document.getElementById('disbursementRecordsList');
+    const rows = document.querySelectorAll('#payrollTable tbody tr[data-record-id]');
+    tbody.innerHTML = '';
+
+    rows.forEach(row => {
+      const recordId = row.getAttribute('data-record-id');
+      const employeeName = row.cells[0]?.textContent.trim() || 'Unknown';
+      const netSalary = parseFloat(row.cells[4]?.textContent.replace('$', '').replace(',', '') || 0);
+      const payDate = row.cells[5]?.textContent.trim() || '';
+      const status = row.cells[6]?.textContent.trim() || '';
+
+      if (status.includes('Pending') || status.includes('Paid')) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="checkbox" class="record-checkbox" value="${recordId}" data-amount="${netSalary}"></td>
+          <td>${employeeName}</td>
+          <td>$${netSalary.toFixed(2)}</td>
+          <td>${payDate}</td>
+          <td>${status}</td>
+          <td><small>Check employee profile</small></td>
+        `;
+        tbody.appendChild(tr);
+      }
+    });
+
+    document.querySelectorAll('.record-checkbox').forEach(cb => {
+      cb.addEventListener('change', updateDisbursementSummary);
+    });
+
+    document.getElementById('selectAllRecords').addEventListener('change', function(e) {
+      document.querySelectorAll('.record-checkbox').forEach(cb => {
+        cb.checked = e.target.checked;
+      });
+      updateDisbursementSummary();
+    });
+  }
+
+  function updateDisbursementSummary() {
+    const checked = document.querySelectorAll('.record-checkbox:checked');
+    let total = 0;
+    checked.forEach(cb => {
+      total += parseFloat(cb.getAttribute('data-amount') || 0);
+    });
+    document.getElementById('selectedCount').textContent = checked.length;
+    document.getElementById('totalAmount').textContent = total.toFixed(2);
+  }
+
+  document.getElementById('confirmDisbursementBtn')?.addEventListener('click', async function() {
+    const checked = document.querySelectorAll('.record-checkbox:checked');
+    if (checked.length === 0) {
+      alert('Please select at least one payroll record to disburse.');
+      return;
+    }
+
+    const recordIds = Array.from(checked).map(cb => parseInt(cb.value));
+    const paymentMethod = document.getElementById('paymentMethod').value;
+    const notes = document.getElementById('disbursementNotes').value;
+
+    if (!confirm(`Are you sure you want to initiate disbursement for ${recordIds.length} record(s)? This will process payments via ${paymentMethod === 'bank_api' ? 'Bank API' : 'Manual Transfer'}.`)) {
+      return;
+    }
+
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+    try {
+      const response = await fetch('/api/payroll/bulk-disbursement/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+          payroll_record_ids: recordIds,
+          payment_method: paymentMethod,
+          notes: notes
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`Disbursement initiated successfully!\n\nDisbursement ID: ${data.disbursement_id}\nTotal Amount: $${data.total_amount.toFixed(2)}\nEmployees: ${data.total_employees}\n\n${data.message}`);
+        bulkDisbursementModal.classList.remove('active');
+        setTimeout(() => location.reload(), 2000);
+      } else {
+        alert('Error: ' + (data.error || 'Failed to initiate disbursement'));
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Initiate Disbursement';
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An error occurred while initiating disbursement.');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i> Initiate Disbursement';
+    }
+  });
+  </script>
+  {% endif %}
+
+  <script src="{% static 'js/payroll.js' %}"></script>
+</body>
+</html>
+

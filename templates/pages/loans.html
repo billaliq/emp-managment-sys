@@ -1,0 +1,799 @@
+{% load static %}
+{% load settings_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loans Management - Employee Information System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/loans.css' %}">
+    <script src="{% static 'js/appearance.js' %}"></script>
+    <style>
+        /* Searchable Select Styles */
+        .searchable-select-wrapper {
+            position: relative;
+        }
+        .searchable-select {
+            position: relative;
+        }
+        .searchable-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            margin-top: 4px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .dropdown-option {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+        }
+        .dropdown-option:hover {
+            background-color: #f0f0f0;
+        }
+        .dropdown-option:last-child {
+            border-bottom: none;
+        }
+        .dropdown-option strong {
+            color: #667eea;
+        }
+        #employeeSearchInput:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        /* Dark mode adjustments for Loans page */
+        [data-theme="dark"] .loan-pool-card {
+            background: var(--bg-card);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+        }
+        [data-theme="dark"] .pool-header h3 {
+            color: var(--text-dark);
+        }
+        [data-theme="dark"] .pool-stats .pool-stat {
+            background: #1a202c;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+        [data-theme="dark"] .pool-stat-label {
+            color: var(--text-light);
+        }
+        [data-theme="dark"] .pool-stat-value {
+            color: var(--text-dark);
+        }
+        [data-theme="dark"] .pool-progress {
+            background: #1a202c;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+        [data-theme="dark"] .progress-bar {
+            background: #2d3748;
+        }
+        [data-theme="dark"] .stats-grid .stat-card {
+            background: var(--bg-card);
+            box-shadow: var(--shadow-sm);
+        }
+        [data-theme="dark"] .stats-grid .stat-card h4 {
+            color: var(--text-dark);
+        }
+        [data-theme="dark"] .tabs {
+            background: #1a202c;
+            border-radius: 12px;
+        }
+        [data-theme="dark"] .tabs .tab {
+            color: var(--text-light);
+        }
+        [data-theme="dark"] .tabs .tab.active {
+            background: var(--primary-color);
+            color: #fff;
+        }
+        [data-theme="dark"] .content-card {
+            background: var(--bg-card);
+            box-shadow: var(--shadow-md);
+        }
+        [data-theme="dark"] .table {
+            color: var(--text-dark);
+        }
+        [data-theme="dark"] .table thead {
+            background: #2d3748;
+        }
+        [data-theme="dark"] .table thead th {
+            color: var(--text-light);
+        }
+    </style>
+</head>
+<body>
+    {% include "pages/splash_screen.html" %}
+    <script src="{% static 'js/splash.js' %}"></script>
+
+    <!-- Sidebar -->
+    {% include "pages/sidebar.html" %}
+    <!-- Main Content -->
+    <main class="main-content sidebar-{{ system_settings.sidebar_width|default:'normal' }}" id="mainContent">
+        <!-- Top Navigation -->
+        {% include "pages/navigation.html" %}
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <div class="page-header fade-in-up">
+                <h1>Loans Management</h1>
+                <p>Manage employee loans, approvals, and repayments</p>
+            </div>
+
+            <!-- Loan Pool Status (Admin/HR only) -->
+            {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+            <div class="loan-pool-card fade-in-up">
+                <div class="pool-header">
+                    <h3>Loan Pool Status</h3>
+                    <div class="pool-actions">
+                        <button class="btn btn-secondary" id="managePoolBtn">
+                            <i class="fas fa-cog"></i> Manage Pool
+                        </button>
+                        <button class="btn btn-secondary" id="refreshPoolBtn">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pool-stats">
+                    <div class="pool-stat">
+                        <div class="pool-stat-label">Total Pool Amount</div>
+                        <div class="pool-stat-value">PKR {{ loan_pool.total_amount|default:"0.00" }}</div>
+                    </div>
+                    <div class="pool-stat">
+                        <div class="pool-stat-label">Available Funds</div>
+                        <div class="pool-stat-value available">PKR {{ loan_pool.available_amount|default:"0.00" }}</div>
+                    </div>
+                    <div class="pool-stat">
+                        <div class="pool-stat-label">Utilized Amount</div>
+                        <div class="pool-stat-value">PKR {{ loan_pool.utilized_amount|default:"0.00" }}</div>
+                    </div>
+                    <div class="pool-stat">
+                        <div class="pool-stat-label">Utilization Rate</div>
+                        <div class="pool-stat-value">{{ loan_pool.utilization_percentage|default:0|floatformat:1 }}%</div>
+                    </div>
+                </div>
+
+                <div class="pool-progress">
+                    <div class="progress-info">
+                        <span class="progress-label">Pool Utilization Progress</span>
+                        <span class="progress-percentage">{{ loan_pool.utilization_percentage|default:0|floatformat:1 }}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="--progress: {{ loan_pool.utilization_percentage|default:0|floatformat:1 }}%"></div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Stats Cards -->
+            <div class="stats-grid fade-in-up">
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <i class="fas fa-hand-holding-usd"></i>
+                        <h4>Active Loans</h4>
+                    </div>
+                    <div class="stat-card-value">{{ stats.approved_loans }}</div>
+                    <div class="stat-card-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        {{ stats.pending_approvals }} pending
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <i class="fas fa-clock"></i>
+                        <h4>Pending Approval</h4>
+                    </div>
+                    <div class="stat-card-value">{{ stats.pending_approvals }}</div>
+                    <div class="stat-card-change warning">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Needs attention
+                    </div>
+                </div>
+
+                <div class="stat-card success">
+                    <div class="stat-card-header">
+                        <i class="fas fa-check-circle"></i>
+                        <h4>Total Repayments</h4>
+                    </div>
+                    <div class="stat-card-value">PKR {{ stats.amount_repaid }}</div>
+                    <div class="stat-card-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        Pool utilization {{ stats.pool_utilization|floatformat:1 }}%
+                    </div>
+                </div>
+
+                <div class="stat-card warning">
+                    <div class="stat-card-header">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h4>Overdue Loans</h4>
+                    </div>
+                    <div class="stat-card-value">{{ stats.overdue_loans }}</div>
+                    <div class="stat-card-change negative">
+                        <i class="fas fa-arrow-up"></i>
+                        Requires follow-up
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <i class="fas fa-dollar-sign"></i>
+                        <h4>Pending Repayments</h4>
+                    </div>
+                    <div class="stat-card-value">PKR {{ stats.total_pending_repayments|floatformat:2 }}</div>
+                    <div class="stat-card-change warning">
+                        <i class="fas fa-info-circle"></i>
+                        Total outstanding
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs Navigation -->
+            <div class="tabs fade-in-up">
+                <button class="tab active" data-tab="loans">
+                    <i class="fas fa-list"></i> All Loans
+                </button>
+                <button class="tab" data-tab="pending">
+                    <i class="fas fa-clock"></i> Pending Approval
+                </button>
+                <button class="tab" data-tab="repayments">
+                    <i class="fas fa-money-bill-wave"></i> Repayments
+                </button>
+                <button class="tab" data-tab="report">
+                    <i class="fas fa-chart-bar"></i> Reports
+                </button>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-bar fade-in-up">
+                <div class="action-group">
+                    {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+                    <button class="btn btn-primary" id="newLoanBtn">
+                        <i class="fas fa-plus"></i> New Loan Application
+                    </button>
+                    <button class="btn btn-success" id="addRepaymentBtn">
+                        <i class="fas fa-money-bill"></i> Add Repayment
+                    </button>
+                    {% elif user_role == 'employee' %}
+                    <button class="btn btn-primary" id="newLoanBtn">
+                        <i class="fas fa-plus"></i> Apply for Loan
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="action-group">
+                    <button class="btn btn-secondary" id="exportReportBtn">
+                        <i class="fas fa-download"></i> Export Report
+                    </button>
+                </div>
+            </div>
+
+            <!-- All Loans Tab -->
+            <div id="loansTab" class="tab-content active">
+                <div class="content-card fade-in-up">
+                    <div class="card-header">
+                        <h3>All Employee Loans</h3>
+                        <div class="card-actions">
+                            {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+                            <button class="btn btn-secondary" id="newLoanBtn2">
+                                <i class="fas fa-plus"></i> New Loan
+                            </button>
+                            {% elif user_role == 'employee' %}
+                            <button class="btn btn-secondary" id="newLoanBtn2">
+                                <i class="fas fa-plus"></i> Apply for Loan
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    {% if user_role != 'employee' %}
+                                    <th>Employee</th>
+                                    {% endif %}
+                                    <th>Loan Amount</th>
+                                    <th>Total Amount</th>
+                                    <th>Remaining Balance</th>
+                                    <th>Installments</th>
+                                    <th>Monthly Payment</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for loan in all_loans %}
+                                <tr>
+                                    {% if user_role != 'employee' %}
+                                    <td data-label="Employee">
+                                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                            <div class="user-avatar">
+                                                {{ loan.employee.firstname|first }}{{ loan.employee.lastname|first|default:"" }}
+                                            </div>
+                                            <div>
+                                                <strong>{{ loan.employee.firstname }} {{ loan.employee.lastname|default:"" }}</strong>
+                                                <br>
+                                                <small>{{ loan.employee.department.name|default:"No Department" }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    {% endif %}
+                                    <td data-label="Loan Amount">PKR {{ loan.loan_amount }}</td>
+                                    <td data-label="Total Amount">PKR {{ loan.total_amount }}</td>
+                                    <td data-label="Remaining Balance">PKR {{ loan.remaining_balance }}</td>
+                                    <td data-label="Installments">{{ loan.installments_remaining }}/{{ loan.number_of_installments }}</td>
+                                    <td data-label="Monthly Payment">PKR {{ loan.monthly_payment }}</td>
+                                    <td data-label="Status">
+                                        <span class="badge {% if loan.status == 'active' %}success{% elif loan.status == 'pending' %}warning{% else %}danger{% endif %}">
+                                            {{ loan.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td data-label="Actions">
+                                        <div class="action-buttons">
+                                            <button class="btn btn-info view-loan" data-loan-id="{{ loan.id }}" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+                                            <button class="btn btn-warning view-repayments" data-loan-id="{{ loan.id }}" title="Repayment History">
+                                                <i class="fas fa-history"></i>
+                                            </button>
+                                            <button class="btn btn-secondary edit-loan" data-loan-id="{{ loan.id }}" title="Edit Loan">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="{% if user_role == 'employee' %}7{% else %}8{% endif %}" style="text-align: center; padding: 2rem;">
+                                        <i class="fas fa-info-circle" style="font-size: 3rem; color: var(--text-light); margin-bottom: 1rem;"></i>
+                                        <p>{% if user_role == 'employee' %}You have no loans{% else %}No loans found{% endif %}</p>
+                                        {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+                                        <button class="btn btn-primary" id="newLoanBtn3">
+                                            <i class="fas fa-plus"></i> Create First Loan
+                                        </button>
+                                        {% elif user_role == 'employee' %}
+                                        <button class="btn btn-primary" id="newLoanBtn3">
+                                            <i class="fas fa-plus"></i> Apply for Loan
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Approval Tab -->
+            <div id="pendingTab" class="tab-content">
+                <div class="content-card fade-in-up">
+                    <div class="card-header">
+                        <h3>Pending Loan Approvals</h3>
+                        <div class="card-actions">
+                            <span class="badge warning">{{ pending_loans|length }} Pending</span>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    {% if user_role != 'employee' %}
+                                    <th>Employee</th>
+                                    {% endif %}
+                                    <th>Loan Amount</th>
+                                    <th>Purpose</th>
+                                    <th>Applied Date</th>
+                                    <th>Installments</th>
+                                    <th>Monthly Payment</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for loan in pending_loans %}
+                                <tr>
+                                    {% if user_role != 'employee' %}
+                                    <td data-label="Employee">
+                                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                            <div class="user-avatar">
+                                                {{ loan.employee.firstname|first }}{{ loan.employee.lastname|first|default:"" }}
+                                            </div>
+                                            <div>
+                                                <strong>{{ loan.employee.firstname }} {{ loan.employee.lastname|default:"" }}</strong>
+                                                <br>
+                                                <small>{{ loan.employee.department.name|default:"No Department" }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    {% endif %}
+                                    <td data-label="Loan Amount">PKR {{ loan.loan_amount }}</td>
+                                    <td data-label="Purpose">{{ loan.purpose|default:"Not specified" }}</td>
+                                    <td data-label="Applied Date">{{ loan.created_at|format_date }}</td>
+                                    <td data-label="Installments">{{ loan.number_of_installments }} months</td>
+                                    <td data-label="Monthly Payment">PKR {{ loan.monthly_payment }}</td>
+                                    <td data-label="Actions">
+                                        <div class="action-buttons">
+                                            {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+                                            <button class="btn btn-success approve-loan" data-loan-id="{{ loan.id }}" title="Approve Loan">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn btn-danger reject-loan" data-loan-id="{{ loan.id }}" title="Reject Loan">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                            {% endif %}
+                                            <button class="btn btn-info view-loan" data-loan-id="{{ loan.id }}" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="{% if user_role == 'employee' %}6{% else %}7{% endif %}" style="text-align: center; padding: 2rem;">
+                                        <i class="fas fa-check-circle" style="font-size: 3rem; color: var(--success-color); margin-bottom: 1rem;"></i>
+                                        <p>{% if user_role == 'employee' %}You have no pending loans{% else %}No pending loan approvals{% endif %}</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Repayments Tab -->
+            <div id="repaymentsTab" class="tab-content">
+                <div class="content-card fade-in-up">
+                    <div class="card-header">
+                        <h3>{% if user_role == 'employee' %}My Repayment History{% else %}Recent Repayments{% endif %}</h3>
+                        <div class="card-actions">
+                            {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+                            <button class="btn btn-success" id="addRepaymentBtn2">
+                                <i class="fas fa-plus"></i> Add Repayment
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    {% if user_role != 'employee' %}
+                                    <th>Employee</th>
+                                    {% endif %}
+                                    <th>Loan Amount</th>
+                                    <th>Payment Amount</th>
+                                    <th>Payment Date</th>
+                                    <th>Remaining Balance</th>
+                                    <th>Installments Left</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for repayment in repayments_data %}
+                                <tr>
+                                    {% if user_role != 'employee' %}
+                                    <td data-label="Employee">
+                                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                            <div class="user-avatar">
+                                                {{ repayment.loan.employee.firstname|first }}{{ repayment.loan.employee.lastname|first|default:"" }}
+                                            </div>
+                                            <div>
+                                                <strong>{{ repayment.loan.employee.firstname }} {{ repayment.loan.employee.lastname|default:"" }}</strong>
+                                                <br>
+                                                <small>{{ repayment.loan.employee.department.name|default:"No Department" }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    {% endif %}
+                                    <td data-label="Loan Amount">PKR {{ repayment.loan.loan_amount|floatformat:2 }}</td>
+                                    <td data-label="Payment Amount">PKR {{ repayment.amount|floatformat:2 }}</td>
+                                    <td data-label="Payment Date">{{ repayment.payment_date|format_date }}</td>
+                                    <td data-label="Remaining Balance">PKR {{ repayment.loan.remaining_balance|floatformat:2 }}</td>
+                                    <td data-label="Installments Left">{{ repayment.loan.installments_remaining|default:"0" }}</td>
+                                    <td data-label="Status">
+                                        <span class="badge success">
+                                            Paid
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="{% if user_role == 'employee' %}6{% else %}7{% endif %}" style="text-align: center; padding: 2rem;">
+                                        <i class="fas fa-money-bill-wave" style="font-size: 3rem; color: var(--text-light); margin-bottom: 1rem;"></i>
+                                        <p>{% if user_role == 'employee' %}You have no repayment records{% else %}No repayment records found{% endif %}</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Tab -->
+            <div id="reportTab" class="tab-content">
+                <div class="content-card fade-in-up">
+                    <div class="card-header">
+                        <h3>Loan Reports & Analytics</h3>
+                        <div class="card-actions">
+                            <button class="btn btn-secondary">
+                                <i class="fas fa-download"></i> Export PDF
+                            </button>
+                        </div>
+                    </div>
+                    <div class="report-content">
+                        <div class="report-stats">
+                            <div class="report-stat">
+                                <h4>Total Loans Issued</h4>
+                                <div class="stat-value">PKR {{ report_data.total_issued|floatformat:2 }}</div>
+                                <div class="stat-change positive">Active loans</div>
+                            </div>
+                            <div class="report-stat">
+                                <h4>Average Loan Amount</h4>
+                                <div class="stat-value">PKR {{ report_data.average_loan|floatformat:2 }}</div>
+                                <div class="stat-change positive">Per employee</div>
+                            </div>
+                            <div class="report-stat">
+                                <h4>Default Rate</h4>
+                                <div class="stat-value">{{ report_data.default_rate|floatformat:1 }}%</div>
+                                <div class="stat-change negative">Overdue loans</div>
+                            </div>
+                            <div class="report-stat">
+                                <h4>Collection Rate</h4>
+                                <div class="stat-value">{{ report_data.collection_rate|floatformat:1 }}%</div>
+                                <div class="stat-change positive">Repayment efficiency</div>
+                            </div>
+                        </div>
+
+                        <div class="chart-placeholder">
+                            <div style="text-align: center; padding: 3rem; background: var(--bg-light); border-radius: 12px;">
+                                <i class="fas fa-chart-line" style="font-size: 4rem; color: var(--text-light); margin-bottom: 1rem;"></i>
+                                <h4>Loan Performance Analytics</h4>
+                                <p>Interactive charts and analytics would be displayed here</p>
+                                <button class="btn btn-primary">
+                                    <i class="fas fa-chart-bar"></i> Generate Detailed Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- New Loan Modal -->
+    <div id="newLoanModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">{% if user_role == 'employee' %}Apply for Loan{% else %}New Loan Application{% endif %}</h2>
+                <button class="close-btn" id="closeLoanModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="loanForm" method="POST">
+                {% csrf_token %}
+                <div class="form-grid">
+                    {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+                    <div class="form-group">
+                        <label for="employee">Employee</label>
+                        <div class="searchable-select-wrapper">
+                            <input type="hidden" id="employee" name="employee" value="" required>
+                            <div class="searchable-select">
+                                <input type="text"
+                                       class="form-input"
+                                       id="employeeSearchInput"
+                                       placeholder="Search employee by name, code, or department..."
+                                       autocomplete="off"
+                                       style="width: 100%; padding-right: 40px;">
+                                <i class="fas fa-chevron-down" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #6c757d;"></i>
+                                <div class="searchable-dropdown" id="employeeDropdown" style="display: none;">
+                                    {% for employee in employees %}
+                                    <div class="dropdown-option" data-value="{{ employee.id }}" data-text="{{ employee.firstname }} {{ employee.lastname|default:"" }} - {{ employee.department.name|default:"No Department" }}">
+                                        <strong>{{ employee.firstname }} {{ employee.lastname|default:"" }}</strong>
+                                        <br>
+                                        <small style="color: #6c757d;">{{ employee.code }} - {{ employee.department.name|default:"No Department" }}</small>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- For employees, show only their name (read-only) -->
+                    <div class="form-group">
+                        <label for="employee">Employee</label>
+                        <input type="text"
+                               class="form-input"
+                               value="{% if current_employee %}{{ current_employee.firstname }} {{ current_employee.lastname|default:"" }} - {{ current_employee.code }}{% else %}Not Available{% endif %}"
+                               readonly
+                               style="background-color: #f5f5f5; cursor: not-allowed;">
+                        <input type="hidden" id="employee" name="employee" value="">
+                    </div>
+                    {% endif %}
+
+                    <div class="form-group">
+                        <label for="loan_amount">Loan Amount (PKR)</label>
+                        <input type="number" id="loan_amount" name="loan_amount" class="form-input"
+                               placeholder="Enter loan amount" min="1" step="0.01" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="installments">Installments (Months)</label>
+                        <input type="number" id="installments" name="installments" class="form-input"
+                               placeholder="Number of months" min="1" max="60" value="12" required>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="purpose">Loan Purpose</label>
+                        <textarea id="purpose" name="purpose" class="form-textarea"
+                                  placeholder="Describe the purpose of this loan" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="start_date">Start Date</label>
+                        <input type="date" id="start_date" name="start_date" class="form-input"
+                               value="{% now 'Y-m-d' %}" required>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelLoanBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Submit Application
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Repayment Modal (Admin/HR only) -->
+    {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+    <div id="addRepaymentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Loan Repayment</h2>
+                <button class="close-btn" id="closeRepaymentModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="repaymentForm" method="POST">
+                {% csrf_token %}
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="loan">Select Loan</label>
+                        <select id="loan" name="loan" class="form-select" required>
+                            <option value="">Select Loan</option>
+                            {% for loan in active_loans %}
+                            <option value="{{ loan.id }}">
+                                {{ loan.employee.firstname }} {{ loan.employee.lastname|default:"" }} - PKR {{ loan.remaining_balance|default:"0.00" }} remaining
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="amount">Payment Amount (PKR)</label>
+                        <input type="number" id="amount" name="amount" class="form-input"
+                               placeholder="Enter payment amount" min="0.01" step="0.01" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="payment_date">Payment Date</label>
+                        <input type="date" id="payment_date" name="payment_date" class="form-input"
+                               value="{% now 'Y-m-d' %}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="payment_method">Payment Method</label>
+                        <select id="payment_method" name="payment_method" class="form-select" required>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="cash">Cash</option>
+                            <option value="check">Check</option>
+                            <option value="payroll_deduction">Payroll Deduction</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="notes">Notes (Optional)</label>
+                        <textarea id="notes" name="notes" class="form-textarea"
+                                  placeholder="Any additional notes about this payment" rows="2"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelRepaymentBtn">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-money-bill"></i> Record Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Loan Pool Management Modal (Admin/HR only) -->
+    {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+    <div id="loanPoolModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Manage Loan Pool</h2>
+                <button class="close-btn" id="closePoolModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="poolForm" method="POST">
+                {% csrf_token %}
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="action_type">Action Type</label>
+                        <select id="action_type" name="action_type" class="form-select" required>
+                            <option value="add_funds">Add Funds to Pool</option>
+                            <option value="withdraw_funds">Withdraw Funds from Pool</option>
+                            <option value="adjust_limit">Adjust Pool Limit</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="amount">Amount (PKR)</label>
+                        <input type="number" id="amount" name="amount" class="form-input"
+                               placeholder="Enter amount" min="0.01" step="0.01" required>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="reason">Reason/Description</label>
+                        <textarea id="reason" name="reason" class="form-textarea"
+                                  placeholder="Describe the reason for this pool adjustment" rows="3" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="transaction_date">Transaction Date</label>
+                        <input type="date" id="transaction_date" name="transaction_date" class="form-input" required>
+                    </div>
+                </div>
+
+                <div class="current-pool-info" style="background: var(--bg-light); padding: 1.5rem; border-radius: 12px; margin: 1.5rem 0;">
+                    <h4 style="margin-bottom: 1rem;">Current Pool Status</h4>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                        <div>
+                            <strong>Total Pool:</strong> PKR {{ loan_pool.total_amount|default:"0.00" }}
+                        </div>
+                        <div>
+                            <strong>Available:</strong> PKR {{ loan_pool.available_amount|default:"0.00" }}
+                        </div>
+                        <div>
+                            <strong>Utilized:</strong> PKR {{ loan_pool.utilized_amount|default:"0.00" }}
+                        </div>
+                        <div>
+                            <strong>Utilization:</strong> {{ loan_pool.utilization_percentage|default:0|floatformat:1 }}%
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelPoolBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Pool
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <script src="{% static 'js/loans.js' %}"></script>
+</body>
+</html>

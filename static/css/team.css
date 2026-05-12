@@ -1,0 +1,476 @@
+/* Team.css - Enhanced and Responsive Team Management Dashboard Styles */
+        /* CSS Variables */
+        /* Content Card */
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin: 0;
+        }
+
+        /* Team Cards */
+        .teams-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .team-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            padding: 2rem 1.5rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .team-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-primary);
+            transform: scaleX(0);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .team-card:hover {
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.25);
+            transform: translateY(-8px) scale(1.02);
+        }
+        .team-card:hover::before {
+            transform: scaleX(1);
+        }
+        .team-card:hover .team-card-header h3 {
+            transform: translateX(4px);
+            color: #667eea;
+        }
+        .team-card:hover .badge {
+            transform: scale(1.05);
+        }
+        .team-card:hover .btn-primary,
+        .team-card:hover .btn-secondary {
+            transform: scale(1.05);
+        }
+        .team-card:hover .btn-primary {
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        @keyframes teamCardPulse {
+            0%, 100% {
+                transform: translateY(-8px) scale(1.02);
+            }
+            50% {
+                transform: translateY(-10px) scale(1.03);
+            }
+        }
+        .team-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        .team-card-header h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin: 0;
+            transition: all 0.3s ease;
+        }
+        .team-leader {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .team-leader-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .team-leader-info h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+        .team-leader-info p {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin: 0;
+        }
+        .team-members {
+            margin-bottom: 0.5rem;
+        }
+        .team-members-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .team-members-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .team-member {
+            background: var(--bg-light);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-width: 220px;
+            box-shadow: var(--shadow-sm);
+        }
+        .team-member-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .team-member-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--gradient-card);
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .team-member-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .team-member-role {
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+        .team-member-attendance {
+            margin-top: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+        }
+        .attendance-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .attendance-badge.present {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .attendance-badge.absent {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .attendance-badge.loading {
+            background-color: #e5e7eb;
+            color: #6b7280;
+        }
+        .attendance-time {
+            color: var(--text-light);
+            font-size: 0.7rem;
+        }
+        .team-member-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .team-card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 1rem;
+        }
+        .team-stats {
+            display: flex;
+            gap: 2rem;
+        }
+        .team-stat {
+            text-align: center;
+        }
+        .team-stat-number {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        .team-stat-label {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        /* modal styles */
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+            background: var(--bg-light);
+            color: var(--text-dark);
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+         /* Team Management Modal Specific Styles */
+        .team-management-modal .team-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-light);
+            border-radius: 8px;
+        }
+
+        .team-management-modal .team-leader-large {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            font-weight: 700;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .team-management-modal .team-details h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .team-management-modal .team-details p {
+            color: var(--text-light);
+        }
+
+        .team-management-modal .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .team-management-modal .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            transition: var(--transition);
+            border-bottom: 2px solid transparent;
+        }
+
+        .team-management-modal .tab.active {
+            border-bottom: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .team-management-modal .tab-content {
+            display: none;
+        }
+
+        .team-management-modal .tab-content.active {
+            display: block;
+        }
+
+        .team-management-modal .member-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .team-management-modal .member-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .team-management-modal .member-item:hover {
+            background: var(--bg-light);
+        }
+
+        .team-management-modal .member-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .team-management-modal .member-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .team-management-modal .project-item {
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .team-management-modal .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .team-management-modal .project-title {
+            font-weight: 600;
+        }
+
+        .team-management-modal .project-status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .team-management-modal .status-active {
+            background: rgba(76, 175, 80, 0.1);
+            color: var(--success-color);
+        }
+
+        .team-management-modal .status-completed {
+            background: rgba(102, 126, 234, 0.1);
+            color: var(--primary-color);
+        }
+
+        .team-management-modal .progress-bar {
+            height: 8px;
+            background: var(--bg-light);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.75rem 0;
+        }
+
+        .team-management-modal .progress {
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 4px;
+        }
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .teams-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .menu-toggle {
+                display: block;
+            }
+            .search-box {
+                width: 200px;
+            }
+            .topbar {
+                padding: 1rem;
+            }
+            .page-content {
+                padding: 1rem;
+            }
+            .teams-grid {
+                grid-template-columns: 1fr;
+            }
+            .user-info {
+                display: none;
+            }
+            .notification-dropdown {
+                width: 300px;
+                right: -50px;
+            }
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .team-card {
+                padding: 1.2rem 0.8rem;
+            }
+        }
+        @media (max-width: 480px) {
+            .search-box {
+                width: 150px;
+            }
+            .topbar-right {
+                gap: 0.5rem;
+            }
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+            .notification-dropdown {
+                width: 280px;
+                right: -80px;
+            }
+            .team-card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            .team-card-footer {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+            .team-stats {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+

@@ -1,0 +1,280 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Departments - Employee Information System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="{% static 'css/departments.css' %}" rel="stylesheet">
+    <script src="{% static 'js/appearance.js' %}"></script>
+</head>
+<body>
+    {% include "pages/splash_screen.html" %}
+    <script src="{% static 'js/splash.js' %}"></script>
+
+    <div class="dashboard">
+        <!-- Sidebar -->
+        {% include "pages/sidebar.html" %}
+
+        <!-- Main Content -->
+        <main class="main-content">
+            {% include "pages/navigation.html" %}
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <!-- Display Django messages -->
+                {% if messages %}
+                <div class="messages django-messages">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="page-header">
+                    <h1>Departments</h1>
+                    <p>Manage and view all departments</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon primary">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>{{ total_departments }}</h3>
+                            <p>Total Departments</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon success">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>{{ active_departments }}</h3>
+                            <p>Active Departments</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon warning">
+                            <i class="fas fa-pause-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>{{ inactive_departments }}</h3>
+                            <p>Inactive Departments</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon info">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>{{ total_employees }}</h3>
+                            <p>Total Employees</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3 class="card-title">All Departments</h3>
+                        {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+                        <button id="newDepartmentBtn" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Department
+                        </button>
+                        {% endif %}
+                    </div>
+
+                    <!-- Department Cards -->
+                    <div class="departments-grid" id="departmentsGrid">
+                        {% for dept in departments %}
+                        <div class="department-card fade-in-up" data-id="{{ dept.id }}">
+                            <div class="department-header">
+                                <div class="department-icon"><i class="fas fa-building"></i></div>
+                                <span class="department-status badge {% if dept.status == 'active' %}success{% else %}danger{% endif %}">
+                                    {{ dept.status|title }}
+                                </span>
+                            </div>
+                            <h3 class="department-title">{{ dept.name }}</h3>
+                            <p class="department-description">{{ dept.description|default:"No description provided" }}</p>
+
+                            <div class="department-details">
+                                <p><strong>Employees:</strong> <span class="employee-count">{% if dept.annotated_employee_count %}{{ dept.annotated_employee_count }}{% else %}{{ dept.employee_count }}{% endif %}</span></p>
+                                <p><strong>Department Head:</strong> {% if dept.head %}{{ dept.head.firstname }} {{ dept.head.lastname }}{% else %}Not assigned{% endif %}</p>
+                                <p><strong>Date Added:</strong> {{ dept.created_at|date:"d M Y" }}</p>
+                                <p><strong>Last Updated:</strong> {{ dept.updated_at|date:"d M Y" }}</p>
+                            </div>
+
+                            <div class="department-actions">
+                                <button class="btn btn-primary view-employees-btn" data-id="{{ dept.id }}" data-name="{{ dept.name }}" title="View Employees">
+                                    <i class="fas fa-users"></i> View Employees
+                                </button>
+                                {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+                                <button class="btn btn-info assign-employees-btn" data-id="{{ dept.id }}" data-name="{{ dept.name }}" title="Assign Employees">
+                                    <i class="fas fa-user-plus"></i> Assign Employees
+                                </button>
+                                <button class="btn btn-success edit-btn" data-id="{{ dept.id }}"><i class="fas fa-edit"></i> Edit</button>
+                                <button class="btn btn-danger delete-btn" data-id="{{ dept.id }}"><i class="fas fa-trash"></i> Delete</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="empty-state" id="emptyState">
+                            <i class="fas fa-building"></i>
+                            <h3>No Departments Found</h3>
+                            <p>Get started by creating your first department</p>
+                            <button id="newDepartmentBtnEmpty" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Add Department
+                            </button>
+                        </div>
+                        {% endfor %}
+
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal (Admin/HR only) -->
+    {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+    <div class="modal" id="newDepartmentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Add Department</h2>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            <form id="departmentForm">
+                {% csrf_token %}
+                <input type="hidden" name="id" id="deptId">
+                <div class="form-group">
+                    <label class="form-label">Department Name *</label>
+                    <input type="text" name="name" id="deptName" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" id="deptDescription" class="form-textarea" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status *</label>
+                    <select name="status" id="deptStatus" class="form-select" required>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Department Head</label>
+                    <select name="head" id="deptHead" class="form-select">
+                        <option value="">Select Department Head</option>
+                        {% for employee in employees %}
+                        <option value="{{ employee.id }}">{{ employee.firstname }} {{ employee.lastname }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Office Timings Section -->
+                <div class="form-group" style="border-top: 1px solid #e0e0e0; padding-top: 1rem; margin-top: 1rem;">
+                    <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem;">Office Timings</label>
+                    <p style="font-size: 0.875rem; color: #666; margin-bottom: 1rem;">
+                        Set custom office timings for this department. If disabled, uses global attendance settings.
+                        Changes apply going forward only and do not affect past attendance records.
+                    </p>
+
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" name="use_custom_timings" id="useCustomTimings" style="width: auto;">
+                            <span>Use Custom Office Timings</span>
+                        </label>
+                    </div>
+
+                    <div id="officeTimingsFields" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">Office Start Time (Check-in)</label>
+                            <input type="time" name="office_start_time" id="officeStartTime" class="form-input"
+                                   placeholder="09:00" value="09:00">
+                            <small style="color: #666; font-size: 0.875rem;">Default check-in time for employees in this department</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Office End Time (Check-out)</label>
+                            <input type="time" name="office_end_time" id="officeEndTime" class="form-input"
+                                   placeholder="18:00" value="18:00">
+                            <small style="color: #666; font-size: 0.875rem;">Default check-out time for employees in this department</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Grace Period (minutes)</label>
+                            <input type="number" name="grace_period_minutes" id="gracePeriodMinutes" class="form-input"
+                                   placeholder="15" value="15" min="0" max="60">
+                            <small style="color: #666; font-size: 0.875rem;">Grace period in minutes for late arrival (e.g., 15 minutes)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Save Department</button>
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- View Employees Modal -->
+    <div class="modal" id="viewEmployeesModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="viewEmployeesModalTitle">Department Employees</h2>
+                <button class="close-btn" id="closeViewEmployeesModal">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 1.5rem;">
+                <div id="viewEmployeesContent">
+                    <div style="text-align: center; padding: 2rem;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #667eea;"></i>
+                        <p style="margin-top: 1rem; color: #666;">Loading employees...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid #e0e0e0; display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button type="button" class="btn btn-secondary" id="closeViewEmployeesBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Employees Modal -->
+    {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+    <div class="modal" id="assignEmployeesModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="assignModalTitle">Assign Employees to Department</h2>
+                <button class="close-btn" id="closeAssignModal">&times;</button>
+            </div>
+            <form id="assignEmployeesForm">
+                {% csrf_token %}
+                <input type="hidden" name="department_id" id="assignDeptId">
+                <div class="form-group">
+                    <label class="form-label">Select Employees to Assign</label>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <input type="text" id="employeeSearchInput" class="form-input" placeholder="Search employees by name or ID..." style="width: 100%;">
+                    </div>
+                    <div id="employeesList" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 1rem; border-radius: 8px;">
+                        <!-- Employees will be loaded here -->
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="assignSubmitBtn">Assign Selected Employees</button>
+                    <button type="button" class="btn btn-secondary" id="cancelAssignBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <script src="{% static 'js/notifications.js' %}"></script>
+    <script src="{% static 'js/departments.js' %}"></script>
+</body>
+</html>

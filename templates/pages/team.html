@@ -1,0 +1,385 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teams Management - Funprime Technology | EIS</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/team.css' %}">
+    <script src="{% static 'js/appearance.js' %}"></script>
+</head>
+<body>
+    {% include "pages/splash_screen.html" %}
+    <script src="{% static 'js/splash.js' %}"></script>
+
+    <!-- Loading Screen -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Sidebar -->
+    {% include "pages/sidebar.html" %}
+
+    <!-- Main Content -->
+    <main class="main-content sidebar-{{ system_settings.sidebar_width|default:'normal' }}" id="mainContent">
+        <!-- Top Navigation -->
+        {% include "pages/navigation.html" %}
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <div class="page-header fade-in-up">
+                <h1>Teams Management</h1>
+                <p>View and manage teams in your organization</p>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card fade-in-up">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <span class="stat-change positive">+{{ stats.teams_change }}</span>
+                    </div>
+                    <div class="stat-number">{{ stats.total_teams }}</div>
+                    <div class="stat-label">Total Teams</div>
+                </div>
+                <div class="stat-card success fade-in-up">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <span class="stat-change positive">+{{ stats.members_change }}%</span>
+                    </div>
+                    <div class="stat-number">{{ stats.total_members }}</div>
+                    <div class="stat-label">Team Members</div>
+                </div>
+                <div class="stat-card warning fade-in-up">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <span class="stat-change positive">+{{ stats.projects_change }}%</span>
+                    </div>
+                    <div class="stat-number">{{ stats.active_projects }}</div>
+                    <div class="stat-label">Active Projects</div>
+                </div>
+                <div class="stat-card fade-in-up">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <span class="stat-change {% if stats.availability_change >= 0 %}positive{% else %}negative{% endif %}">
+                            {% if stats.availability_change >= 0 %}+{% endif %}{{ stats.availability_change }}%
+                        </span>
+                    </div>
+                    <div class="stat-number">{{ stats.team_availability }}%</div>
+                    <div class="stat-label">Team Availability</div>
+                </div>
+            </div>
+
+            <!-- Teams Grid -->
+            <div class="content-card fade-in-up">
+                <div class="card-header">
+                    <h3 class="card-title">All Teams</h3>
+                    {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+                    <button class="btn btn-primary" id="addTeamBtn">
+                        <i class="fas fa-plus"></i>
+                        Add New Team
+                    </button>
+                    {% endif %}
+                </div>
+
+                <div class="teams-grid">
+                    {% for team in teams %}
+                    <div class="team-card">
+                        <div class="team-card-header">
+                            <h3>{{ team.name }}</h3>
+                            <span class="badge {% if team.status == 'active' %}active{% else %}inactive{% endif %}">
+                                {{ team.status|title }}
+                            </span>
+                        </div>
+                        <div class="team-leader">
+                            <div class="team-leader-avatar">
+                                {{ team.leader.firstname.0 }}{{ team.leader.lastname.0|default:"" }}
+                            </div>
+                            <div class="team-leader-info">
+                                <h4>{% if team.leader.team %}{{ team.leader.team }}{% else %}{{ team.leader.firstname }} {{ team.leader.lastname|default:"" }}{% endif %}</h4>
+                                <p>Team Lead</p>
+                            </div>
+                        </div>
+                        <div class="team-members">
+                            <h4 class="team-members-title">Team Members ({{ team.members_count }})</h4>
+                            <div class="team-members-list" data-team-id="{{ team.id }}">
+                                {% for member in team.members.all|slice:":3" %}
+                                <div class="team-member" data-member-id="{{ member.employee.id }}">
+                                    <div class="team-member-info">
+                                        <div class="team-member-avatar">
+                                            {{ member.employee.firstname.0 }}{{ member.employee.lastname.0|default:"" }}
+                                        </div>
+                                        <div>
+                                            <div class="team-member-name">
+                                                {{ member.employee.firstname }} {{ member.employee.lastname|default:"" }}
+                                            </div>
+                                            <div class="team-member-role">
+                                                {{ member.employee.job_title|default:"Team Member" }}
+                                            </div>
+                                            <div class="team-member-attendance" id="attendance-{{ member.employee.id }}">
+                                                <span class="attendance-badge loading">
+                                                    <i class="fas fa-spinner fa-spin"></i>
+                                                    Loading...
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="team-member-actions">
+                                        <button class="btn btn-secondary view-member-btn" style="padding: 0.4rem;"
+                                                data-member-id="{{ member.employee.id }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="no-members">No members added yet</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="team-card-footer">
+                            <div class="team-stats">
+                                <div class="team-stat">
+                                    <div class="team-stat-number">{{ team.projects_count }}</div>
+                                    <div class="team-stat-label">Projects</div>
+                                </div>
+                                <div class="team-stat">
+                                    <div class="team-stat-number">{{ team.capacity }}%</div>
+                                    <div class="team-stat-label">Capacity</div>
+                                </div>
+                            </div>
+                            {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+                            <button class="btn btn-secondary manage-team-btn"
+                                    data-team-id="{{ team.id }}"
+                                    data-team-name="{{ team.name }}"
+                                    data-team-leader="{% if team.leader.team %}{{ team.leader.team }}{% else %}{{ team.leader.firstname }} {{ team.leader.lastname|default:'' }}{% endif %}"
+                                    data-team-members="{{ team.members_count }}"
+                                    data-team-projects="{{ team.projects_count }}"
+                                    data-team-capacity="{{ team.capacity }}">
+                                <i class="fas fa-users"></i>
+                                Manage
+                            </button>
+                            <button class="btn btn-danger delete-team-btn"
+                                    data-team-id="{{ team.id }}"
+                                    data-team-name="{{ team.name }}">
+                                <i class="fas fa-trash"></i>
+                                Delete
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="no-teams-message">
+                        <i class="fas fa-users fa-3x" style="color: #6c757d; margin-bottom: 1rem;"></i>
+                        <h3>No Teams Created Yet</h3>
+                        <p>Get started by creating your first team</p>
+                        {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+                        <button class="btn btn-primary" id="addFirstTeamBtn">
+                            <i class="fas fa-plus"></i>
+                            Create Your First Team
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Team Modal (Admin/HR only) -->
+    {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+    <div class="modal" id="addTeamModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add New Team</h2>
+                <button class="close-btn" id="closeModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="teamForm" method="POST" action="{% url 'add_team' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">Team Name</label>
+                    <input type="text" class="form-input" name="team_name" placeholder="Enter team name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Team Lead</label>
+                    <select class="form-select" name="team_lead" id="addTeamLeadSelect" required>
+                        <option value="">Select Team Lead</option>
+                        {% if team_choices %}
+                            {% for choice_value, choice_display in team_choices %}
+                            <option value="{{ choice_value }}">{{ choice_display }}</option>
+                            {% endfor %}
+                        {% else %}
+                            {% for employee in employees %}
+                            <option value="{{ employee.id }}">{{ employee.firstname }} {{ employee.lastname|default:"" }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Department</label>
+                    <select class="form-select" name="department" required>
+                        <option value="">Select Department</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.id }}">{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Team Members</label>
+                    <input type="text" id="teamMembersSearchInput" class="form-input" placeholder="Search team members by name or role..." style="margin-bottom: 0.75rem;">
+                    <select class="form-select" name="team_members" id="teamMembersSelect" multiple style="height: 120px;">
+                        {% for employee in employees %}
+                        <option value="{{ employee.id }}">{{ employee.firstname }} {{ employee.lastname|default:"" }} ({{ employee.job_title|default:"Employee" }})</option>
+                        {% endfor %}
+                    </select>
+                    <small>Hold Ctrl/Cmd to select multiple members</small>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Team</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Team Management Modal (Admin/HR only) -->
+    {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+    <div class="modal team-management-modal" id="teamManagementModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="teamManagementTitle">Manage Team</h2>
+                <button class="close-btn" id="closeTeamManagementModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="team-info">
+                    <div class="team-leader-large" id="teamLeaderAvatar">FL</div>
+                    <div class="team-details">
+                        <h3 id="teamNameDisplay">Team Name</h3>
+                        <p>Led by <span id="teamLeaderDisplay">Team Leader</span></p>
+                    </div>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab active" data-tab="members">Members</div>
+                    <div class="tab" data-tab="projects">Projects</div>
+                    <div class="tab" data-tab="settings">Settings</div>
+                </div>
+
+                <div class="tab-content active" id="members-tab">
+                    <div class="form-group">
+                        <div class="form-label">Team Members</div>
+                        <div class="member-list" id="teamMembersList">
+                            <!-- Members will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-primary" id="addMemberBtn">
+                            <i class="fas fa-user-plus"></i> Add Member
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="projects-tab">
+                    <div class="form-group">
+                        <div class="form-label">Active Projects</div>
+                        <div id="teamProjectsList">
+                            <!-- Projects will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-primary" id="addProjectBtn">
+                            <i class="fas fa-plus"></i> New Project
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="settings-tab">
+                    <form id="teamSettingsForm">
+                        {% csrf_token %}
+                        <input type="hidden" id="teamIdInput" name="team_id">
+                        <div class="form-group">
+                            <label class="form-label">Team Name</label>
+                            <input type="text" class="form-input" id="teamNameInput" name="team_name" placeholder="Team Name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Team Lead</label>
+                            <select class="form-select" id="teamLeadSelect" name="team_lead">
+                                <option value="">Select Team Lead</option>
+                                {% if team_choices %}
+                                    {% for choice_value, choice_display in team_choices %}
+                                    <option value="{{ choice_value }}">{{ choice_display }}</option>
+                                    {% endfor %}
+                                {% else %}
+                                    {% for employee in employees %}
+                                    <option value="{{ employee.id }}">{{ employee.firstname }} {{ employee.lastname|default:"" }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Department</label>
+                            <select class="form-select" id="teamDepartmentSelect" name="department">
+                                <option value="">Select Department</option>
+                                {% for dept in departments %}
+                                <option value="{{ dept.id }}">{{ dept.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" id="teamStatusSelect" name="status">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" id="cancelTeamSettingsBtn">Cancel</button>
+                            <button type="submit" class="btn btn-primary" id="saveTeamSettingsBtn">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Member Details Modal -->
+    <div class="modal" id="memberDetailsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="memberDetailsTitle">Member Details</h2>
+                <button class="close-btn" id="closeMemberModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="memberDetailsBody">
+                <!-- Details will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CSRF token for AJAX requests
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        // Debug mode (set to true to see debug info)
+        const DEBUG_MODE = false;
+    </script>
+    <script src="{% static 'js/team.js' %}"></script>
+</body>
+</html>
+

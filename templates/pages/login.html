@@ -1,0 +1,143 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Funprime Technology | Employee Information System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+</head>
+<body>
+    <!-- Background Animation -->
+    <div class="background-animation">
+        <div class="particles" id="particles"></div>
+    </div>
+
+    <!-- Login Container -->
+    <div class="login-container">
+        <div class="login-card">
+            <!-- Logo Section -->
+            <div class="login-logo">
+                <div class="logo-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h1>Funprime Technology</h1>
+                <p>Employee Information System</p>
+            </div>
+
+            <!-- Login Form -->
+            <form class="login-form" method="POST" action="{% url 'login' %}">
+                {% csrf_token %}
+
+                <!-- Display Django messages -->
+                {% if messages %}
+                <div class="login-messages">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        <i class="fas fa-{% if message.tags == 'error' %}exclamation-circle{% elif message.tags == 'success' %}check-circle{% else %}info-circle{% endif %}"></i>
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Username Field -->
+                <div class="form-group">
+                    <div class="input-group">
+                        <div class="input-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <input type="text"
+                               name="username"
+                               id="username"
+                               class="form-input"
+                               placeholder="Username or Email"
+                               required
+                               autocomplete="username">
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div class="form-group">
+                    <div class="input-group">
+                        <div class="input-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <input type="password"
+                               name="password"
+                               id="password"
+                               class="form-input"
+                               placeholder="Password"
+                               required
+                               autocomplete="current-password">
+                        <div class="password-toggle" onclick="togglePassword()">
+                            <i class="fas fa-eye" id="passwordToggleIcon"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Remember Me & Forgot Password -->
+                <div class="form-options">
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="remember_me" id="remember_me">
+                        <span class="checkmark"></span>
+                        Remember me
+                    </label>
+                    <a href="{% url 'password_reset' %}" class="forgot-password">Forgot Password?</a>
+                </div>
+
+                <!-- Login Button -->
+                <button type="submit" class="login-btn" id="loginBtn">
+                    <span class="btn-text">Sign In</span>
+                    <div class="btn-loader" id="btnLoader">
+                        <div class="spinner"></div>
+                    </div>
+                </button>
+
+                <!-- Additional Options -->
+                <div class="login-footer">
+                    <p>Don't have an account? <a href="#" class="register-link">Contact Administrator</a></p>
+                </div>
+            </form>
+        </div>
+
+        <!-- Features Section -->
+        <div class="login-features">
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>Analytics Dashboard</h3>
+                <p>Comprehensive insights into your workforce</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-users-cog"></i>
+                </div>
+                <h3>Team Management</h3>
+                <p>Efficiently manage your teams and projects</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3>Secure & Reliable</h3>
+                <p>Enterprise-grade security for your data</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p>Signing you in...</p>
+        </div>
+    </div>
+
+    <script src="{% static 'js/login.js' %}"></script>
+</body>
+</html>
+

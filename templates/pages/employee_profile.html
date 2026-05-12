@@ -1,0 +1,3107 @@
+{% load static %}
+{% load settings_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Employee Profile - Funprime Technology | EIS</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/employee.css' %}">
+    <script src="{% static 'js/appearance.js' %}"></script>
+</head>
+<body>
+    {% include "pages/splash_screen.html" %}
+    <script src="{% static 'js/splash.js' %}"></script>
+
+    <style>
+        /* Employee Search Form Styles */
+        .employee-search-form {
+            width: 100%;
+        }
+
+        .search-form-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .search-btn {
+            flex-shrink: 0;
+            white-space: nowrap;
+            padding: 0.75rem 1.5rem;
+            height: fit-content;
+        }
+
+        /* Document Grid Styles */
+        .documents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .document-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f9f9f9;
+            transition: all 0.3s ease;
+        }
+
+        .document-item:hover {
+            border-color: #007bff;
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.1);
+        }
+
+        .document-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .document-info i {
+            color: #007bff;
+            font-size: 1.2rem;
+            width: 20px;
+        }
+
+        .document-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Dark mode adjustments for profile documents and cards */
+        [data-theme="dark"] .document-item {
+            background: var(--bg-card);
+            border-color: var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+        [data-theme="dark"] .document-item:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-view, .btn-download, .btn-edit, .btn-delete {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .btn-view {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-download {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-edit {
+            background: #ffc107;
+            color: white;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-view:hover { background: #218838; }
+        .btn-download:hover { background: #0056b3; }
+        .btn-edit:hover { background: #e0a800; }
+        .btn-delete:hover { background: #c82333; }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 0;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            animation: slideIn 0.3s ease;
+        }
+
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #333;
+            font-size: 1.25rem;
+        }
+
+        .close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close:hover {
+            color: #333;
+            background: #e9ecef;
+            border-radius: 50%;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 0 0 8px 8px;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Profile Section Enhancements */
+        .profile-section {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        /* Enhanced Layout Organization */
+        .content-card {
+            margin-bottom: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            transition: box-shadow 0.3s ease;
+        }
+        .content-card:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        }
+        .card-header {
+            padding: 1.5rem;
+            border-bottom: 2px solid #f0f0f0;
+            background: #fafafa;
+        }
+        [data-theme="dark"] .card-header {
+            background: var(--bg-secondary);
+            border-bottom-color: var(--border-color);
+        }
+        .card-header h3 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        [data-theme="dark"] .card-header h3 {
+            color: var(--text-dark);
+        }
+        .card-header h3 i {
+            color: #667eea;
+        }
+        .profile-details {
+            padding: 1.5rem;
+        }
+        .profile-details h4 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .profile-details h4 i {
+            color: #667eea;
+        }
+        .profile-details .editable-field {
+            margin: 0;
+            padding: 1.25rem;
+            background: linear-gradient(to right, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: visible;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .profile-details .editable-field:hover {
+            background: linear-gradient(to right, #ffffff 0%, #f0f4ff 100%);
+            border-left-color: #764ba2;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
+        }
+        .profile-details .editable-field strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            color: #667eea;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            line-height: 1.4;
+        }
+        .profile-details .editable-field .field-value {
+            color: #1f2937;
+            font-size: 1.1rem;
+            font-weight: 500;
+            display: inline-block;
+            padding: 0.25rem 0;
+            line-height: 1.5;
+        }
+
+        /* Enhanced styling for all field values */
+        .profile-details .editable-field span:not(.edit-icon):not(strong):not(.field-value) {
+            color: #1f2937;
+            font-size: 1.1rem;
+            font-weight: 500;
+            padding: 0.25rem 0;
+            line-height: 1.5;
+        }
+
+        /* Special styling for names */
+        .profile-details .editable-field[data-field="firstname"] .field-value,
+        .profile-details .editable-field[data-field="firstname"] > span:not(.edit-icon):not(strong) > span,
+        .profile-details .editable-field[data-field="lastname"] .field-value,
+        .profile-details .editable-field[data-field="lastname"] > span:not(.edit-icon):not(strong) {
+            color: #111827;
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+        .profile-details .editable-field .edit-icon {
+            color: #667eea;
+            margin-left: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+        }
+        .profile-details .editable-field .edit-icon:hover {
+            color: #764ba2;
+            transform: scale(1.2);
+        }
+        .profile-details p:not(.editable-field) {
+            margin: 0;
+            padding: 0;
+        }
+
+        .employee-photo {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #007bff;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 0;
+        }
+
+        .employee-photo:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+            opacity: 0.9;
+        }
+
+        .employee-photo.placeholder {
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 0;
+        }
+
+        .employee-photo.placeholder:hover {
+            background: #dee2e6;
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
+        }
+
+        .btn-change-photo {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+
+        .btn-change-photo:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+        }
+
+        .photo-preview-container {
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .photo-preview-container img {
+            border: 2px solid #007bff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Employees Table Styles */
+        .table-container {
+            margin-top: 1rem;
+            border-radius: 8px;
+            overflow: hidden;
+            max-height: 70vh;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        .table thead {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e9ecef;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+
+        .table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Dark mode table styles */
+        [data-theme="dark"] .table {
+            background: var(--bg-primary);
+        }
+        [data-theme="dark"] .table thead {
+            background: var(--bg-secondary);
+            border-bottom-color: var(--border-color);
+        }
+        [data-theme="dark"] .table th,
+        [data-theme="dark"] .table td {
+            color: var(--text-dark);
+            border-bottom-color: var(--border-color);
+        }
+        [data-theme="dark"] .table tbody tr {
+            background: var(--bg-primary);
+        }
+        [data-theme="dark"] .table tbody tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
+
+        .profile-details {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .profile-details h4 {
+            color: #495057;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 0.5rem;
+        }
+
+        .profile-details p {
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .profile-details strong {
+            min-width: 120px;
+            color: #495057;
+        }
+
+        /* Alert Styles */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .documents-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .document-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .document-actions {
+                align-self: flex-end;
+            }
+
+            .modal-content {
+                margin: 5% auto;
+                width: 95%;
+            }
+        }
+
+        /* Loading State */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+        }
+
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top: 2px solid #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Editable Field Styles */
+        .editable-field {
+            position: relative;
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+
+        .editable-field:hover {
+            background-color: #f0f0f0;
+        }
+
+        .editable-field.editing {
+            background-color: #e8f4f8;
+        }
+
+        .field-value {
+            display: inline-block;
+            min-width: 150px;
+            margin-left: 0.5rem;
+        }
+
+        .edit-icon {
+            margin-left: 0.5rem;
+            color: #007bff;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            font-size: 0.85rem;
+        }
+
+        .editable-field:hover .edit-icon {
+            opacity: 1;
+        }
+
+        .edit-icon:hover {
+            color: #0056b3;
+        }
+
+        .field-input, .field-select {
+            padding: 0.25rem 0.5rem;
+            border: 2px solid #007bff;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            min-width: 200px;
+        }
+
+        .field-input:focus, .field-select:focus {
+            outline: none;
+            border-color: #0056b3;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        .field-actions {
+            display: inline-flex;
+            gap: 0.25rem;
+            margin-left: 0.5rem;
+        }
+
+        .btn-save-field, .btn-cancel-field {
+            padding: 0.25rem 0.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-save-field {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-save-field:hover {
+            background: #218838;
+        }
+
+        .btn-cancel-field {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-cancel-field:hover {
+            background: #5a6268;
+        }
+
+        /* Stronger status badge colors for better visibility */
+        .badge-success {
+            background: #28a745 !important;
+            color: #ffffff !important;
+        }
+
+        .badge-warning {
+            background: #ffc107 !important;
+            color: #212529 !important;
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    {% include "pages/sidebar.html" %}
+    <main class="main-content">
+        {% include "pages/navigation.html" %}
+
+        <div class="page-content">
+            <div class="page-header fade-in-up">
+                <h1>Employee Profile</h1>
+                <p>Search and manage employee documents</p>
+            </div>
+
+            {% if can_search %}
+            <!-- Search Form -->
+            <div class="content-card fade-in-up" style="margin-bottom: 2rem;">
+                <form method="GET" action="{% url 'employee_profile' %}" class="employee-search-form">
+                    <div class="search-form-row">
+                        <input type="text" name="q" class="form-input search-input" placeholder="Search by Employee ID, Name, Email, Department, or Position..." value="{{ request.GET.q }}">
+                        <button type="submit" class="btn btn-primary search-btn">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Employees Table -->
+            {% if all_employees %}
+            <div class="content-card fade-in-up">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-users"></i> All Employees</h3>
+                    <div class="header-actions" style="display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem;">
+                        <div class="pagination-controls" style="display: flex; align-items: center; gap: 1rem;">
+                            <label for="perPageSelect" style="margin: 0; font-size: 0.9rem; color: #6c757d;">Show:</label>
+                            <select id="perPageSelect" class="form-select" style="width: auto; min-width: 80px;">
+                                <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                                <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                                <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                                <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                            </select>
+                            <span style="font-size: 0.9rem; color: #6c757d;">
+                                {% if all_employees_paginated %}
+                                    Showing {{ all_employees_paginated.start_index }} - {{ all_employees_paginated.end_index }} of {{ all_employees_paginated.paginator.count }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <p style="margin: 0; color: #6c757d; font-size: 0.9rem; margin-top: 0.5rem;">Click on Employee ID to view profile</p>
+                </div>
+                <div class="table-container" style="max-height: 70vh; overflow-y: auto; overflow-x: auto;">
+                    <table class="table" id="employeesTable">
+                        <thead>
+                            <tr>
+                                <th>Employee ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Contact</th>
+                                <th>Department</th>
+                                <th>Position</th>
+                                <th>Job Title</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if all_employees %}
+                            {% for emp in all_employees %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'employee_profile' %}?q={{ emp.code }}" style="color: #007bff; text-decoration: none; font-weight: 600;">
+                                        {{ emp.code }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        {% if emp.photo %}
+                                        <img src="{{ emp.photo.url }}" alt="{{ emp.firstname }}" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+                                        {% else %}
+                                        <div style="width: 35px; height: 35px; border-radius: 50%; background: #e9ecef; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; color: #6c757d; font-weight: 600;">
+                                            {{ emp.firstname|default:""|first }}{{ emp.lastname|default:""|first }}
+                                        </div>
+                                        {% endif %}
+                                        <div>
+                                            <div style="font-weight: 600;">{{ emp.firstname }} {{ emp.lastname|default:"" }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ emp.email|default:"—" }}</td>
+                                <td>{{ emp.contact_1|default:"—" }}</td>
+                                <td>{{ emp.department.name|default:"—" }}</td>
+                                <td>{{ emp.position.name|default:"—" }}</td>
+                                <td>{{ emp.job_title|default:"—" }}</td>
+                                <td>
+                                    <span class="badge {% if emp.status == 1 %}badge-success{% else %}badge-warning{% endif %}">
+                                        {% if emp.status == 1 %}Active{% else %}Inactive{% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                        <a href="{% url 'employee_profile' %}?q={{ emp.code }}" class="btn btn-primary btn-sm" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+                                        <form action="{% url 'delete_employee' emp.id %}" method="POST" style="display: inline;" onsubmit="return confirmDelete('{{ emp.firstname|escapejs }} {{ emp.lastname|default:''|escapejs }}', '{{ emp.code|escapejs }}');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger btn-sm" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" title="Delete Employee">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" style="text-align: center; padding: 2rem; color: #6c757d;">
+                                    No employees found.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if all_employees_paginated and all_employees_paginated.paginator.num_pages > 1 %}
+                <div class="pagination-wrapper" style="margin-top: 1.5rem; padding: 1rem; border-top: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div class="pagination-info" style="font-size: 0.9rem; color: #6c757d;">
+                        Page {{ all_employees_paginated.number }} of {{ all_employees_paginated.paginator.num_pages }}
+                    </div>
+                    <nav class="pagination" style="display: flex; gap: 0.5rem;">
+                        {% if all_employees_paginated.has_previous %}
+                            <a href="?page=1&per_page={{ per_page }}{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-angle-double-left"></i> First
+                            </a>
+                            <a href="?page={{ all_employees_paginated.previous_page_number }}&per_page={{ per_page }}{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-angle-left"></i> Previous
+                            </a>
+                        {% else %}
+                            <span class="btn btn-secondary btn-sm" style="opacity: 0.5; cursor: not-allowed;">
+                                <i class="fas fa-angle-double-left"></i> First
+                            </span>
+                            <span class="btn btn-secondary btn-sm" style="opacity: 0.5; cursor: not-allowed;">
+                                <i class="fas fa-angle-left"></i> Previous
+                            </span>
+                        {% endif %}
+
+                        {% for num in all_employees_paginated.paginator.page_range %}
+                            {% if all_employees_paginated.number == num %}
+                                <span class="btn btn-primary btn-sm">{{ num }}</span>
+                            {% elif num > all_employees_paginated.number|add:'-3' and num < all_employees_paginated.number|add:'3' %}
+                                <a href="?page={{ num }}&per_page={{ per_page }}{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}" class="btn btn-secondary btn-sm">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if all_employees_paginated.has_next %}
+                            <a href="?page={{ all_employees_paginated.next_page_number }}&per_page={{ per_page }}{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}" class="btn btn-secondary btn-sm">
+                                Next <i class="fas fa-angle-right"></i>
+                            </a>
+                            <a href="?page={{ all_employees_paginated.paginator.num_pages }}&per_page={{ per_page }}{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}" class="btn btn-secondary btn-sm">
+                                Last <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        {% else %}
+                            <span class="btn btn-secondary btn-sm" style="opacity: 0.5; cursor: not-allowed;">
+                                Next <i class="fas fa-angle-right"></i>
+                            </span>
+                            <span class="btn btn-secondary btn-sm" style="opacity: 0.5; cursor: not-allowed;">
+                                Last <i class="fas fa-angle-double-right"></i>
+                            </span>
+                        {% endif %}
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% endif %}
+
+            {% if employee %}
+            <!-- Display Generated Password (Admin/HR only) -->
+            {% if generated_password and is_admin %}
+            <div class="alert alert-success fade-in-up" style="margin: 1rem 0; padding: 1.5rem; background: #d4edda; border: 2px solid #28a745; border-radius: 8px;">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                    <i class="fas fa-key" style="font-size: 1.5rem; color: #28a745;"></i>
+                    <div style="flex: 1;">
+                        <h4 style="margin: 0; color: #155724;"><strong>🔐 New Employee Credentials</strong></h4>
+                        <p style="margin: 0.5rem 0 0 0; color: #155724;">Please share these credentials securely with the employee:</p>
+                    </div>
+                </div>
+                <div style="background: white; padding: 1rem; border-radius: 6px; margin-top: 1rem; border: 1px solid #c3e6cb;">
+                    <p style="margin: 0.5rem 0;"><strong>Username:</strong> <code style="background: #f8f9fa; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 1.1rem;">{{ generated_username }}</code></p>
+                    <p style="margin: 0.5rem 0;"><strong>Password:</strong> <code style="background: #f8f9fa; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 1.1rem; font-weight: bold; color: #28a745;">{{ generated_password }}</code></p>
+                </div>
+                <button onclick="copyPassword()" class="btn btn-primary" style="margin-top: 1rem;">
+                    <i class="fas fa-copy"></i> Copy Password
+                </button>
+                <button onclick="clearPasswordDisplay()" class="btn btn-secondary" style="margin-top: 1rem; margin-left: 0.5rem;">
+                    <i class="fas fa-times"></i> Dismiss
+                </button>
+            </div>
+            <script>
+                function copyPassword() {
+                    const password = '{{ generated_password }}';
+                    navigator.clipboard.writeText(password).then(function() {
+                        alert('Password copied to clipboard!');
+                    });
+                }
+                function clearPasswordDisplay() {
+                    document.querySelector('.alert-success').style.display = 'none';
+                }
+            </script>
+            <script>
+                // Password toggle functionality
+                function togglePassword() {
+                    const passwordDisplay = document.getElementById('passwordDisplay');
+                    const passwordHidden = document.getElementById('passwordHidden');
+                    const toggleIcon = document.getElementById('togglePasswordIcon');
+                    const toggleText = document.getElementById('togglePasswordText');
+
+                    if (passwordDisplay && passwordHidden) {
+                        if (passwordDisplay.style.display === 'none') {
+                            // Show password
+                            passwordDisplay.style.display = 'inline';
+                            passwordHidden.style.display = 'none';
+                            toggleIcon.classList.remove('fa-eye');
+                            toggleIcon.classList.add('fa-eye-slash');
+                            toggleText.textContent = 'Hide Password';
+                        } else {
+                            // Hide password
+                            passwordDisplay.style.display = 'none';
+                            passwordHidden.style.display = 'inline';
+                            toggleIcon.classList.remove('fa-eye-slash');
+                            toggleIcon.classList.add('fa-eye');
+                            toggleText.textContent = 'View Password';
+                        }
+                    }
+                }
+
+                // Copy password to clipboard
+                function copyPasswordToClipboard() {
+                    const passwordDisplay = document.getElementById('passwordDisplay');
+                    if (passwordDisplay) {
+                        const password = passwordDisplay.textContent.trim();
+                        navigator.clipboard.writeText(password).then(function() {
+                            // Show a nice notification
+                            const btn = event.target.closest('button');
+                            const originalText = btn.innerHTML;
+                            btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                            btn.style.background = '#28a745';
+                            setTimeout(function() {
+                                btn.innerHTML = originalText;
+                                btn.style.background = '';
+                            }, 2000);
+                        }).catch(function(err) {
+                            alert('Failed to copy password. Please select and copy manually.');
+                        });
+                    }
+                }
+            </script>
+            {% endif %}
+
+            <!-- Employee Profile Header Card -->
+            <div class="content-card fade-in-up" style="margin-bottom: 2rem;">
+                <div style="display: flex; align-items: center; gap: 2rem; padding: 2rem; flex-wrap: wrap;">
+                    <!-- Photo Section -->
+                    <div style="flex-shrink: 0; text-align: center;">
+                        <div style="position: relative; display: inline-block;">
+                            {% if employee.photo %}
+                            <img src="{{ employee.photo.url }}" alt="Employee Photo" class="employee-photo" id="employeePhotoDisplay" {% if can_edit_profile %}style="cursor: pointer;" title="Click to change photo"{% endif %}>
+                            {% else %}
+                            <div class="employee-photo placeholder" id="employeePhotoPlaceholder" {% if can_edit_profile %}style="cursor: pointer;" title="Click to upload photo"{% endif %}>
+                                <i class="fas fa-user" style="font-size: 3rem; color: #6c757d;"></i>
+                            </div>
+                            {% endif %}
+                            {% if can_edit_profile %}
+                            <button class="btn-change-photo" onclick="openPhotoUploadModal()" title="Change Photo" {% if is_profile_submitted and not can_edit_documents %}disabled style="opacity: 0.6; cursor: not-allowed;"{% endif %}>
+                                <i class="fas fa-camera"></i> Change Photo
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Basic Info Section -->
+                    <div style="flex: 1; min-width: 300px;">
+                        <h2 style="margin: 0 0 0.75rem 0; font-size: 2.5rem; font-weight: 700; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.5px; line-height: 1.2;">
+                            {{ employee.firstname }} {{ employee.lastname }}
+                        </h2>
+                        <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1rem;">
+                            <div>
+                                <span style="color: #6c757d; font-size: 0.9rem; font-weight: 600;">Employee Code:</span>
+                                <span style="color: #667eea; font-size: 1.25rem; font-weight: 700; margin-left: 0.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">{{ employee.code }}</span>
+                            </div>
+                            <div class="editable-field" data-field="status" data-type="select">
+                                <span style="color: #6c757d; font-size: 0.9rem; font-weight: 600;">Status:</span>
+                                {% if can_edit_profile %}
+                                <span class="field-value" data-value="{{ employee.status }}" style="margin-left: 0.5rem;">
+                                    <span class="badge {% if employee.status == 1 %}badge-success{% else %}badge-warning{% endif %}">
+                                        {% if employee.status == 1 %}Active{% else %}Inactive{% endif %}
+                                    </span>
+                                </span>
+                                <span class="edit-icon" title="Click to change status" style="margin-left: 0.5rem;"><i class="fas fa-edit"></i></span>
+                                {% else %}
+                                <span class="badge {% if employee.status == 1 %}badge-success{% else %}badge-warning{% endif %}" style="margin-left: 0.5rem;">
+                                    {% if employee.status == 1 %}Active{% else %}Inactive{% endif %}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if employee.department %}
+                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e0e0e0;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; font-size: 0.95rem;">
+                                {% if employee.department %}
+                                <div>
+                                    <i class="fas fa-building" style="color: #667eea; margin-right: 0.5rem;"></i>
+                                    <span style="color: #6c757d;">Department:</span>
+                                    <strong style="color: #1f2937; font-size: 1.05rem; font-weight: 600; margin-left: 0.5rem; padding: 0.25rem 0.75rem; background: #f3f4f6; border-radius: 6px; display: inline-block;">{{ employee.department.name }}</strong>
+                                </div>
+                                {% endif %}
+                                {% if employee.position %}
+                                <div>
+                                    <i class="fas fa-briefcase" style="color: #667eea; margin-right: 0.5rem;"></i>
+                                    <span style="color: #6c757d;">Position:</span>
+                                    <strong style="color: #1f2937; font-size: 1.05rem; font-weight: 600; margin-left: 0.5rem; padding: 0.25rem 0.75rem; background: #f3f4f6; border-radius: 6px; display: inline-block;">{{ employee.position.name }}</strong>
+                                </div>
+                                {% endif %}
+                                {% if employee.job_title %}
+                                <div>
+                                    <i class="fas fa-id-badge" style="color: #667eea; margin-right: 0.5rem;"></i>
+                                    <span style="color: #6c757d;">Job Title:</span>
+                                    <strong style="color: #1f2937; font-size: 1.05rem; font-weight: 600; margin-left: 0.5rem; padding: 0.25rem 0.75rem; background: #f3f4f6; border-radius: 6px; display: inline-block;">{{ employee.job_title }}</strong>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Personal Information Section -->
+            <div class="content-card fade-in-up" style="margin-bottom: 2rem;">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-user"></i> Personal Information</h3>
+                </div>
+                <div class="profile-details" style="padding: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                        <!-- First Name -->
+                        <p class="editable-field" data-field="firstname" data-type="text">
+                            <strong>First Name:</strong>
+                            <span style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                {% if can_edit_profile %}
+                                <span class="field-value" data-value="{{ employee.firstname|default:'' }}">{{ employee.firstname|default:"Not provided" }}</span>
+                                <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                                {% else %}
+                                <span>{{ employee.firstname|default:"Not provided" }}</span>
+                                {% endif %}
+                            </span>
+                        </p>
+
+                        <!-- Last Name -->
+                        <p class="editable-field" data-field="lastname" data-type="text">
+                            <strong>Last Name:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.lastname|default:'' }}">{{ employee.lastname|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.lastname|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Father's Name -->
+                        <p class="editable-field" data-field="father_name" data-type="text">
+                            <strong>Father's Name:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.father_name|default:'' }}">{{ employee.father_name|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.father_name|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Date of Birth -->
+                        <p class="editable-field" data-field="dob" data-type="date">
+                            <strong>Date of Birth:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{% if employee.dob %}{{ employee.dob|date:'Y-m-d' }}{% endif %}">{% if employee.dob %}{{ employee.dob|date:"d M Y" }}{% else %}Not provided{% endif %}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{% if employee.dob %}{{ employee.dob|date:"d M Y" }}{% else %}Not provided{% endif %}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Gender -->
+                        <p class="editable-field" data-field="gender" data-type="select">
+                            <strong>Gender:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.gender|default:'' }}">{{ employee.gender|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.gender|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Marital Status -->
+                        <p class="editable-field" data-field="marital_status" data-type="select">
+                            <strong>Marital Status:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.marital_status|default:'' }}">{{ employee.marital_status|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.marital_status|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- National ID -->
+                        <p class="editable-field" data-field="national_id" data-type="text">
+                            <strong>National ID:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.national_id|default:'' }}">{{ employee.national_id|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.national_id|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Blood Group -->
+                        <p class="editable-field" data-field="blood_group" data-type="text">
+                            <strong>Blood Group:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.blood_group|default:'' }}">{{ employee.blood_group|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.blood_group|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Contact 1 -->
+                        <p class="editable-field" data-field="contact_1" data-type="text">
+                            <strong>Contact 1:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.contact_1|default:'' }}">{{ employee.contact_1|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.contact_1|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Contact 2 -->
+                        <p class="editable-field" data-field="contact_2" data-type="text">
+                            <strong>Contact 2:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.contact_2|default:'' }}">{{ employee.contact_2|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.contact_2|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Emergency Contact -->
+                        <p class="editable-field" data-field="emergency_contact" data-type="text">
+                            <strong>Emergency Contact:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.emergency_contact|default:'' }}">{{ employee.emergency_contact|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.emergency_contact|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Emergency Contact Person -->
+                        <p class="editable-field" data-field="emergency_contact_person" data-type="text">
+                            <strong>Emergency Contact Person:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.emergency_contact_person|default:'' }}">{{ employee.emergency_contact_person|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.emergency_contact_person|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Email -->
+                        <p class="editable-field" data-field="email" data-type="text">
+                            <strong>Email:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.email|default:'' }}">{{ employee.email|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.email|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Official Email -->
+                        <p class="editable-field" data-field="official_email" data-type="text">
+                            <strong>Official Email:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.official_email|default:'' }}">{{ employee.official_email|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.official_email|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <!-- Present Address -->
+                    <p class="editable-field" data-field="present_address" data-type="textarea" style="margin-top: 1rem;">
+                        <strong>Present Address:</strong>
+                        {% if can_edit_profile %}
+                        <span class="field-value" data-value="{{ employee.present_address|default:'' }}">{{ employee.present_address|default:"Not provided" }}</span>
+                        <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                        {% else %}
+                        <span>{{ employee.present_address|default:"Not provided" }}</span>
+                        {% endif %}
+                    </p>
+
+                    <!-- Permanent Address -->
+                    <p class="editable-field" data-field="permanent_address" data-type="textarea" style="margin-top: 1rem;">
+                        <strong>Permanent Address:</strong>
+                        {% if can_edit_profile %}
+                        <span class="field-value" data-value="{{ employee.permanent_address|default:'' }}">{{ employee.permanent_address|default:"Not provided" }}</span>
+                        <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                        {% else %}
+                        <span>{{ employee.permanent_address|default:"Not provided" }}</span>
+                        {% endif %}
+                    </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employment Information Section -->
+            <div class="content-card fade-in-up" style="margin-bottom: 2rem;">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-briefcase"></i> Employment Information</h3>
+                </div>
+                <div class="profile-details" style="padding: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                        <!-- Department -->
+                        <p class="editable-field" data-field="department" data-type="select">
+                            <strong>Department:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.department.id|default:'' }}">{{ employee.department.name|default:"Not assigned" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.department.name|default:"Not assigned" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Position -->
+                        <p class="editable-field" data-field="position" data-type="select">
+                            <strong>Position:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.position.id|default:'' }}">{{ employee.position.name|default:"Not assigned" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.position.name|default:"Not assigned" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Job Title -->
+                        <p class="editable-field" data-field="job_title" data-type="text">
+                            <strong>Job Title:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.job_title|default:'' }}">{{ employee.job_title|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.job_title|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Team -->
+                        {% if can_edit_profile %}
+                        <p class="editable-field" data-field="team" data-type="select">
+                            <strong>Team:</strong>
+                            <span class="field-value" data-value="{{ employee.team|default:'' }}">{{ employee.team|default:"Not assigned" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                        </p>
+                        {% else %}
+                        <p>
+                            <strong>Team:</strong>
+                            <span>{{ employee.team|default:"Not assigned" }}</span>
+                        </p>
+                        {% endif %}
+
+                        <!-- Date Hired -->
+                        <p class="editable-field" data-field="date_hired" data-type="date">
+                            <strong>Date Hired:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{% if employee.date_hired %}{{ employee.date_hired|date:'Y-m-d' }}{% endif %}">{% if employee.date_hired %}{{ employee.date_hired|date:"d M Y" }}{% else %}Not provided{% endif %}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{% if employee.date_hired %}{{ employee.date_hired|date:"d M Y" }}{% else %}Not provided{% endif %}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Date Permanent -->
+                        <p class="editable-field" data-field="date_permanent" data-type="date">
+                            <strong>Date Permanent:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{% if employee.date_permanent %}{{ employee.date_permanent|date:'Y-m-d' }}{% endif %}">{% if employee.date_permanent %}{{ employee.date_permanent|date:"d M Y" }}{% else %}Not provided{% endif %}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{% if employee.date_permanent %}{{ employee.date_permanent|date:"d M Y" }}{% else %}Not provided{% endif %}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Registration No -->
+                        <p class="editable-field" data-field="registration_no" data-type="text">
+                            <strong>Registration No:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.registration_no|default:'' }}">{{ employee.registration_no|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.registration_no|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Work Mode -->
+                        <p class="editable-field" data-field="work_mode" data-type="select">
+                            <strong>Work Mode:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.work_mode|default:'' }}">{{ employee.work_mode|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.work_mode|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Employment Type -->
+                        <p class="editable-field" data-field="employment_type" data-type="select">
+                            <strong>Employment Type:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.employment_type|default:'' }}">{{ employee.employment_type|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.employment_type|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Reporting To -->
+                        <p class="editable-field" data-field="reporting_to" data-type="text">
+                            <strong>Reporting To:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.reporting_to|default:'' }}">{{ employee.reporting_to|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.reporting_to|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Salary -->
+                        <p class="editable-field" data-field="salary" data-type="number">
+                            <strong>Salary:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.salary|default:0 }}">{% if employee.salary %}{{ employee.salary|floatformat:0 }}{% else %}Not provided{% endif %}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{% if employee.salary %}{{ employee.salary|floatformat:0 }}{% else %}Not provided{% endif %}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Location -->
+                        <p class="editable-field" data-field="location" data-type="text">
+                            <strong>Location:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.location|default:'' }}">{{ employee.location|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.location|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <hr>
+
+            <!-- Bank Details Section -->
+            <div class="content-card fade-in-up" style="margin-bottom: 2rem;">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-university"></i> Bank Details</h3>
+                </div>
+                <div class="profile-details" style="padding: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                        <!-- Bank Name -->
+                        <p class="editable-field" data-field="bank_name" data-type="text">
+                            <strong>Bank Name:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.bank_name|default:'' }}">{{ employee.bank_name|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.bank_name|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Branch Name -->
+                        <p class="editable-field" data-field="branch_name" data-type="text">
+                            <strong>Branch Name:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.branch_name|default:'' }}">{{ employee.branch_name|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.branch_name|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Account Title -->
+                        <p class="editable-field" data-field="account_title" data-type="text">
+                            <strong>Account Title:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.account_title|default:'' }}">{{ employee.account_title|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.account_title|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Account Number -->
+                        <p class="editable-field" data-field="account_number" data-type="text">
+                            <strong>Account Number:</strong>
+                            {% if can_edit_profile %}
+                            <span class="field-value" data-value="{{ employee.account_number|default:'' }}">{{ employee.account_number|default:"Not provided" }}</span>
+                            <span class="edit-icon" title="Click to edit"><i class="fas fa-edit"></i></span>
+                            {% else %}
+                            <span>{{ employee.account_number|default:"Not provided" }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Employee Login Credentials (Admin/HR only) -->
+                {% if employee.user %}
+                    {% if is_admin or user_role == 'hr' %}
+                <hr>
+                <div class="profile-details">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="margin: 0;"><i class="fas fa-key"></i> Login Credentials</h4>
+                        {% if generated_password %}
+                        <button id="togglePasswordBtn" class="btn btn-sm btn-secondary" onclick="togglePassword()" style="padding: 0.4rem 0.8rem;">
+                            <i class="fas fa-eye" id="togglePasswordIcon"></i> <span id="togglePasswordText">View Password</span>
+                        </button>
+                        {% endif %}
+                    </div>
+
+                    <p class="editable-field" data-field="username" data-type="text">
+                        <strong>Username:</strong>
+                        <span class="field-value" data-value="{{ generated_username|default:employee.user.username }}">
+                            <code style="background: #f8f9fa; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 1rem; margin-left: 0.5rem;">{{ generated_username|default:employee.user.username }}</code>
+                        </span>
+                        <span class="edit-icon" title="Click to edit username"><i class="fas fa-edit"></i></span>
+                    </p>
+
+                    {% if generated_password %}
+                    <p>
+                        <strong>Password:</strong>
+                        <code id="passwordDisplay" style="background: #f8f9fa; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 1rem; margin-left: 0.5rem; font-weight: bold; color: #28a745; display: none;">{{ generated_password }}</code>
+                        <span id="passwordHidden" style="background: #f8f9fa; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 1rem; margin-left: 0.5rem; color: #6c757d;">••••••••••••</span>
+                    </p>
+                    <div style="margin-top: 0.5rem;">
+                        <button onclick="copyPasswordToClipboard()" class="btn btn-sm btn-primary" style="padding: 0.4rem 0.8rem; margin-right: 0.5rem;">
+                            <i class="fas fa-copy"></i> Copy Password
+                        </button>
+                        <a href="{% url 'reset_employee_password' employee.code %}" class="btn btn-sm btn-warning" style="padding: 0.4rem 0.8rem; text-decoration: none; display: inline-block;">
+                            <i class="fas fa-sync-alt"></i> Reset Password
+                        </a>
+                    </div>
+                    {% else %}
+                    <p style="color: #6c757d; font-style: italic;">
+                        <i class="fas fa-info-circle"></i> Password is not available. It may have been cleared for security reasons.
+                    </p>
+                    <div style="margin-top: 0.5rem;">
+                        <a href="{% url 'reset_employee_password' employee.code %}" class="btn btn-sm btn-warning" style="padding: 0.4rem 0.8rem; text-decoration: none; display: inline-block;">
+                            <i class="fas fa-sync-alt"></i> Reset Password
+                        </a>
+                    </div>
+                    {% endif %}
+                    </div>
+                </div>
+            </div>
+                    {% endif %}
+                {% endif %}
+
+            <!-- Documents Section -->
+            <div class="content-card fade-in-up" style="margin-bottom: 2rem;">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-folder-open"></i> Documents</h3>
+                </div>
+                <div style="padding: 1.5rem;">
+                    <!-- Additional Documents: Quick add button (Admin/HR and employees) -->
+                    {% if employee %}
+                    <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; padding-bottom: 1rem; border-bottom: 1px solid #e0e0e0;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="openAdditionalDocModal()">
+                            <i class="fas fa-plus"></i> Add additional document
+                        </button>
+                        <span style="font-size: 0.85rem; color: #6c757d;">
+                            Optional uploads for any extra paperwork (PDF, images, DOC).
+                        </span>
+                    </div>
+                    {% endif %}
+
+                <!-- Profile Submitted Warning -->
+                {% if is_profile_submitted and not can_edit_documents %}
+                <div class="alert alert-warning" style="margin: 1rem 0; padding: 1rem; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-lock" style="font-size: 1.5rem; color: #856404;"></i>
+                    <div>
+                        <strong style="color: #856404;">Profile Locked:</strong>
+                        <p style="margin: 0.25rem 0 0 0; color: #856404;">
+                            You have already submitted your documents. You cannot make changes. Please contact administrator for any modifications.
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="documents-grid">
+                    {% if employee.photo or can_edit_documents %}
+                    <div class="document-item">
+                        <div class="document-info">
+                            <i class="fas fa-id-card"></i>
+                            <span>Employee Photo</span>
+                            {% if not employee.photo %}
+                            <span style="font-size: 0.85rem; color: #6c757d; margin-left: 0.5rem;">No file uploaded</span>
+                            {% endif %}
+                        </div>
+                        <div class="document-actions">
+                            {% if employee.photo %}
+                            <a href="{{ employee.photo.url }}" target="_blank" class="btn-view" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'download_document' employee.code 'photo' %}" class="btn-download" title="Download">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            {% endif %}
+                            {% if can_edit_documents %}
+                            <button class="btn-edit" onclick="openEditModal('photo')" title="{% if employee.photo %}Replace Photo{% else %}Upload Photo{% endif %}">
+                                <i class="fas fa-upload"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if employee.cnic_copy or can_edit_documents %}
+                    <div class="document-item">
+                        <div class="document-info">
+                            <i class="fas fa-address-card"></i>
+                            <span>CNIC Copy</span>
+                            {% if not employee.cnic_copy %}
+                            <span style="font-size: 0.85rem; color: #6c757d; margin-left: 0.5rem;">No file uploaded</span>
+                            {% endif %}
+                        </div>
+                        <div class="document-actions">
+                            {% if employee.cnic_copy %}
+                            <a href="{{ employee.cnic_copy.url }}" target="_blank" class="btn-view" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'download_document' employee.code 'cnic_copy' %}" class="btn-download" title="Download">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            {% endif %}
+                            {% if can_edit_documents %}
+                            <button class="btn-edit" onclick="openEditModal('cnic_copy')" title="{% if employee.cnic_copy %}Replace CNIC Copy{% else %}Upload CNIC Copy{% endif %}">
+                                <i class="fas fa-upload"></i>
+                            </button>
+                            {% if employee.cnic_copy %}
+                            <button class="btn-delete" onclick="deleteDocument('cnic_copy')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if employee.passport_size_photo or can_edit_documents %}
+                    <div class="document-item">
+                        <div class="document-info">
+                            <i class="fas fa-id-badge"></i>
+                            <span>Passport Size Photo</span>
+                            {% if not employee.passport_size_photo %}
+                            <span style="font-size: 0.85rem; color: #6c757d; margin-left: 0.5rem;">No file uploaded</span>
+                            {% endif %}
+                        </div>
+                        <div class="document-actions">
+                            {% if employee.passport_size_photo %}
+                            <a href="{{ employee.passport_size_photo.url }}" target="_blank" class="btn-view" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'download_document' employee.code 'passport_size_photo' %}" class="btn-download" title="Download">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            {% endif %}
+                            {% if can_edit_documents %}
+                            <button class="btn-edit" onclick="openEditModal('passport_size_photo')" title="{% if employee.passport_size_photo %}Replace Passport Photo{% else %}Upload Passport Photo{% endif %}">
+                                <i class="fas fa-upload"></i>
+                            </button>
+                            {% if employee.passport_size_photo %}
+                            <button class="btn-delete" onclick="deleteDocument('passport_size_photo')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if employee.updated_resume or can_edit_documents %}
+                    <div class="document-item">
+                        <div class="document-info">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Updated Resume</span>
+                            {% if not employee.updated_resume %}
+                            <span style="font-size: 0.85rem; color: #6c757d; margin-left: 0.5rem;">No file uploaded</span>
+                            {% endif %}
+                        </div>
+                        <div class="document-actions">
+                            {% if employee.updated_resume %}
+                            <a href="{{ employee.updated_resume.url }}" target="_blank" class="btn-view" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'download_document' employee.code 'updated_resume' %}" class="btn-download" title="Download">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            {% endif %}
+                            {% if can_edit_documents %}
+                            <button class="btn-edit" onclick="openEditModal('updated_resume')" title="{% if employee.updated_resume %}Replace Resume{% else %}Upload Resume{% endif %}">
+                                <i class="fas fa-upload"></i>
+                            </button>
+                            {% if employee.updated_resume %}
+                            <button class="btn-delete" onclick="deleteDocument('updated_resume')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if employee.educational_certificate or can_edit_documents %}
+                    <div class="document-item">
+                        <div class="document-info">
+                            <i class="fas fa-graduation-cap"></i>
+                            <span>Educational Certificate</span>
+                            {% if not employee.educational_certificate %}
+                            <span style="font-size: 0.85rem; color: #6c757d; margin-left: 0.5rem;">No file uploaded</span>
+                            {% endif %}
+                        </div>
+                        <div class="document-actions">
+                            {% if employee.educational_certificate %}
+                            <a href="{{ employee.educational_certificate.url }}" target="_blank" class="btn-view" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'download_document' employee.code 'educational_certificate' %}" class="btn-download" title="Download">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            {% endif %}
+                            {% if can_edit_documents %}
+                            <button class="btn-edit" onclick="openEditModal('educational_certificate')" title="{% if employee.educational_certificate %}Replace Certificate{% else %}Upload Certificate{% endif %}">
+                                <i class="fas fa-upload"></i>
+                            </button>
+                            {% if employee.educational_certificate %}
+                            <button class="btn-delete" onclick="deleteDocument('educational_certificate')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if employee.experience_letter or can_edit_documents %}
+                    <div class="document-item">
+                        <div class="document-info">
+                            <i class="fas fa-briefcase"></i>
+                            <span>Experience Letter</span>
+                            {% if not employee.experience_letter %}
+                            <span style="font-size: 0.85rem; color: #6c757d; margin-left: 0.5rem;">No file uploaded</span>
+                            {% endif %}
+                        </div>
+                        <div class="document-actions">
+                            {% if employee.experience_letter %}
+                            <a href="{{ employee.experience_letter.url }}" target="_blank" class="btn-view" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'download_document' employee.code 'experience_letter' %}" class="btn-download" title="Download">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            {% endif %}
+                            {% if can_edit_documents %}
+                            <button class="btn-edit" onclick="openEditModal('experience_letter')" title="{% if employee.experience_letter %}Replace Experience Letter{% else %}Upload Experience Letter{% endif %}">
+                                <i class="fas fa-upload"></i>
+                            </button>
+                            {% if employee.experience_letter %}
+                            <button class="btn-delete" onclick="deleteDocument('experience_letter')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if employee.offer_letter_signed or can_edit_documents %}
+                    <div class="document-item">
+                        <div class="document-info">
+                            <i class="fas fa-file-contract"></i>
+                            <span>Offer Letter (Signed)</span>
+                            {% if not employee.offer_letter_signed %}
+                            <span style="font-size: 0.85rem; color: #6c757d; margin-left: 0.5rem;">No file uploaded</span>
+                            {% endif %}
+                        </div>
+                        <div class="document-actions">
+                            {% if employee.offer_letter_signed %}
+                            <a href="{{ employee.offer_letter_signed.url }}" target="_blank" class="btn-view" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'download_document' employee.code 'offer_letter_signed' %}" class="btn-download" title="Download">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            {% endif %}
+                            {% if can_edit_documents %}
+                            <button class="btn-edit" onclick="openEditModal('offer_letter_signed')" title="{% if employee.offer_letter_signed %}Replace Offer Letter{% else %}Upload Offer Letter{% endif %}">
+                                <i class="fas fa-upload"></i>
+                            </button>
+                            {% if employee.offer_letter_signed %}
+                            <button class="btn-delete" onclick="deleteDocument('offer_letter_signed')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if employee.nda_form_signed or can_edit_documents %}
+                    <div class="document-item">
+                        <div class="document-info">
+                            <i class="fas fa-file-signature"></i>
+                            <span>NDA Form (Signed)</span>
+                            {% if not employee.nda_form_signed %}
+                            <span style="font-size: 0.85rem; color: #6c757d; margin-left: 0.5rem;">No file uploaded</span>
+                            {% endif %}
+                        </div>
+                        <div class="document-actions">
+                            {% if employee.nda_form_signed %}
+                            <a href="{{ employee.nda_form_signed.url }}" target="_blank" class="btn-view" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'download_document' employee.code 'nda_form_signed' %}" class="btn-download" title="Download">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            {% endif %}
+                            {% if can_edit_documents %}
+                            <button class="btn-edit" onclick="openEditModal('nda_form_signed')" title="{% if employee.nda_form_signed %}Replace NDA{% else %}Upload NDA{% endif %}">
+                                <i class="fas fa-upload"></i>
+                            </button>
+                            {% if employee.nda_form_signed %}
+                            <button class="btn-delete" onclick="deleteDocument('nda_form_signed')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% for doc in employee.additional_documents.all %}
+                    {% with doc_id_str=doc.id|stringformat:"s" %}
+                    {% with doc_slug="additional_"|add:doc_id_str %}
+                    <div class="document-item">
+                        <div class="document-info">
+                            <i class="fas fa-file-alt"></i>
+                            <span>{{ doc.label|default:"Additional Document" }}</span>
+                        </div>
+                        <div class="document-actions">
+                            <a href="{{ doc.file.url }}" target="_blank" class="btn-view" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'download_document' employee.code doc_slug %}" class="btn-download" title="Download">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            {% if can_edit_documents %}
+                            <button class="btn-edit" onclick="openEditModal('{{ doc_slug }}','{{ doc.label|escapejs }}')" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-delete" onclick="deleteDocument('{{ doc_slug }}')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endwith %}
+                    {% endwith %}
+                    {% endfor %}
+                </div>
+
+                <!-- No Documents Message -->
+                {% if not employee.photo and not employee.cnic_copy and not employee.passport_size_photo and not employee.updated_resume and not employee.educational_certificate and not employee.experience_letter and not employee.offer_letter_signed and not employee.nda_form_signed and not employee.additional_documents.all|length %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-circle"></i>
+                    {% if can_edit_documents %}
+                        No documents available for this employee yet. Use the upload buttons above to add documents.
+                    {% else %}
+                        No documents available for this employee.
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Attendance Section -->
+            {% if employee %}
+            <div class="content-card fade-in-up">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-calendar-check"></i> Attendance Records</h3>
+                    {% if can_search %}
+                    <!-- Admin/HR View: Show button to view employee's full attendance -->
+                    <a href="{% url 'employee_attendance' employee.id %}" class="btn btn-primary">
+                        <i class="fas fa-calendar-alt"></i> View Employee Attendance
+                    </a>
+                    {% else %}
+                    <!-- Employee View: Show button to view their own detailed attendance -->
+                    <a href="{% url 'employee_attendance' employee.id %}" class="btn btn-primary">
+                        <i class="fas fa-calendar-alt"></i> View My Attendance
+                    </a>
+                    {% endif %}
+                </div>
+
+                <!-- Attendance Stats -->
+                {% if attendance_stats %}
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 600; color: #007bff;">{{ attendance_stats.monthly_present|default:0 }}</div>
+                        <div style="font-size: 0.9rem; color: #6c757d;">Present Days (This Month)</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 600; color: #28a745;">{{ attendance_stats.monthly_rate|default:0 }}%</div>
+                        <div style="font-size: 0.9rem; color: #6c757d;">Monthly Attendance Rate</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 600; color: #17a2b8;">{{ attendance_stats.total_attendance|default:0 }}</div>
+                        <div style="font-size: 0.9rem; color: #6c757d;">Total Records</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 600; color: {% if attendance_stats.today_attendance %}#28a745{% else %}#6c757d{% endif %};">
+                            {% if attendance_stats.today_attendance %}
+                                {{ attendance_stats.today_attendance.status|title }}
+                            {% else %}
+                                Not Marked
+                            {% endif %}
+                        </div>
+                        <div style="font-size: 0.9rem; color: #6c757d;">Today's Status</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Attendance Table -->
+                <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Additional Info</th>
+                                <th>Check-In</th>
+                                <th>Check-Out</th>
+                                <th>Work Duration</th>
+                                <th>Overtime</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in attendance_records %}
+                            <tr>
+                                <td>{{ record.date|date:"M d, Y" }}</td>
+                                <td>
+                                    {% if record.simplified_status == 'present' %}
+                                        <span class="badge" style="background: rgba(72, 187, 120, 0.1); color: #48bb78; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 500;">Present</span>
+                                    {% elif record.simplified_status == 'leave' %}
+                                        <span class="badge" style="background: rgba(102, 126, 234, 0.1); color: #667eea; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 500;">Leave</span>
+                                    {% else %}
+                                        <span class="badge" style="background: rgba(245, 101, 101, 0.1); color: #f56565; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 500;">Absent</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                                        {% if record.status == 'late' or record.status == 'late-sitting' %}
+                                            <span class="badge" style="background: rgba(231, 76, 60, 0.1); color: #e74c3c; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500;">
+                                                {% if record.status == 'late-sitting' %}Late Sitting{% else %}Late{% endif %}
+                                            </span>
+                                        {% endif %}
+                                        {% if record.status == 'early-out' %}
+                                            <span class="badge" style="background: rgba(96, 125, 139, 0.1); color: #607d8b; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500;">Early Out</span>
+                                        {% endif %}
+                                        {% if record.status == 'early-in' %}
+                                            <span class="badge" style="background: rgba(3, 169, 244, 0.1); color: #03a9f4; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500;">Early In</span>
+                                        {% endif %}
+                                        {% if record.status == 'weekend' or record.is_weekend_date %}
+                                            <span class="badge" style="background: rgba(102, 126, 234, 0.1); color: #667eea; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500;">Weekend</span>
+                                        {% endif %}
+                                        {% if record.status == 'overtime' and not record.overtime_hours %}
+                                            <span class="badge" style="background: rgba(79, 172, 254, 0.1); color: #4facfe; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500;">Overtime</span>
+                                        {% endif %}
+                                        {% if not record.status == 'late' and not record.status == 'late-sitting' and not record.status == 'early-out' and not record.status == 'early-in' and not record.status == 'weekend' and not record.is_weekend_date and not record.status == 'overtime' %}
+                                            <span style="color: #6c757d; font-size: 0.75rem;">—</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if record.check_in_time %}
+                                        {{ record.check_in_time|time:"H:i" }}
+                                    {% else %}
+                                        <span style="color: #6c757d;">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.check_out_time %}
+                                        {{ record.check_out_time|time:"H:i" }}
+                                    {% else %}
+                                        <span style="color: #6c757d;">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.work_duration %}
+                                        {{ record.work_duration }}
+                                    {% else %}
+                                        <span style="color: #6c757d;">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.overtime_hours %}
+                                        {{ record.overtime_hours }} hrs
+                                    {% else %}
+                                        <span style="color: #6c757d;">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.notes %}
+                                        <span title="{{ record.notes }}">{{ record.notes|truncatewords:5 }}</span>
+                                    {% else %}
+                                        <span style="color: #6c757d;">—</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 2rem; color: #6c757d;">
+                                    No attendance records found.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+            {% elif can_search and request.GET.q %}
+            <div class="alert alert-warning fade-in-up">
+                <i class="fas fa-exclamation-triangle"></i> No employee found with ID "{{ request.GET.q }}".
+            </div>
+            {% elif profile_error %}
+            <div class="alert alert-warning fade-in-up">
+                <i class="fas fa-exclamation-circle"></i> {{ profile_error }}
+            </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+
+<!-- Add Document Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Update Document</h3>
+            <button class="close" onclick="closeEditModal()">&times;</button>
+        </div>
+        <form id="documentForm" enctype="multipart/form-data">
+            <div class="modal-body">
+                <input type="hidden" id="documentType" name="document_type">
+                <div class="form-group">
+                    <label for="documentFile" class="form-label">Select File:</label>
+                    <input type="file" id="documentFile" name="document_file" class="form-input" required accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                    <small class="form-text">Supported formats: PDF, JPG, PNG, DOC, DOCX</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <i class="fas fa-upload"></i> Update Document
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Change Photo Modal -->
+{% if can_edit_profile %}
+<div id="photoUploadModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Change Profile Photo</h3>
+            <button class="close" onclick="closePhotoUploadModal()">&times;</button>
+        </div>
+        <form id="photoUploadForm" enctype="multipart/form-data">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="photoFile" class="form-label">Select New Photo:</label>
+                    <input type="file" id="photoFile" name="photo" class="form-input" required accept="image/*">
+                    <small class="form-text">Supported formats: JPG, PNG, GIF (Max 5MB)</small>
+                </div>
+                <div class="photo-preview-container" id="photoPreviewContainer" style="display: none;">
+                    <label class="form-label">Preview:</label>
+                    <img id="photoPreview" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 8px; margin-top: 0.5rem;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closePhotoUploadModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="photoSubmitBtn">
+                    <i class="fas fa-upload"></i> Upload Photo
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Additional Document Modal -->
+<div id="additionalDocModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Add Additional Document</h3>
+            <button class="close" onclick="closeAdditionalDocModal()">&times;</button>
+        </div>
+        <form id="additionalDocForm" enctype="multipart/form-data">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="additionalLabel" class="form-label">Document title:</label>
+                    <input type="text" id="additionalLabel" name="label" class="form-input" placeholder="e.g., Reference Letter, Contract Amendment" required>
+                </div>
+                <div class="form-group" style="margin-top: 0.75rem;">
+                    <label for="additionalFile" class="form-label">Select File:</label>
+                    <input type="file" id="additionalFile" name="document_file" class="form-input" required accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                    <small class="form-text">Supported formats: PDF, JPG, PNG, DOC, DOCX (Max 10MB)</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeAdditionalDocModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="additionalSubmitBtn">
+                    <i class="fas fa-upload"></i> Upload Document
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let currentDocumentType = '';
+let isSubmitting = false;
+
+// Document type display names
+const documentNames = {
+    'photo': 'Employee Photo',
+    'cnic_copy': 'CNIC Copy',
+    'passport_size_photo': 'Passport Size Photo',
+    'updated_resume': 'Updated Resume',
+    'educational_certificate': 'Educational Certificate',
+    'experience_letter': 'Experience Letter',
+    'offer_letter_signed': 'Offer Letter (Signed)',
+    'nda_form_signed': 'NDA Form (Signed)'
+};
+
+function openEditModal(documentType, displayName = '') {
+    if (isSubmitting) return;
+
+    // Check if profile is submitted (for employees)
+    {% if is_profile_submitted and not can_edit_documents %}
+    showNotification('You have already submitted your documents. You cannot make changes. Please contact administrator for any modifications.', 'error');
+    return;
+    {% endif %}
+
+    currentDocumentType = documentType;
+    const modal = document.getElementById('editModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const form = document.getElementById('documentForm');
+
+    // Set modal title
+    const friendlyName = displayName || documentNames[documentType] || documentType;
+    modalTitle.textContent = `Update ${friendlyName}`;
+
+    // Reset form
+    form.reset();
+    document.getElementById('documentType').value = documentType;
+
+    // Show modal
+    modal.style.display = 'block';
+    document.getElementById('documentFile').focus();
+}
+
+function closeEditModal() {
+    if (isSubmitting) return;
+
+    const modal = document.getElementById('editModal');
+    modal.style.display = 'none';
+    currentDocumentType = '';
+    isSubmitting = false;
+
+    // Reset submit button
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Update Document';
+}
+
+function deleteDocument(documentType) {
+    if (isSubmitting) return;
+
+    const documentName = documentNames[documentType] || documentType;
+
+    if (confirm(`Are you sure you want to delete "${documentName}"? This action cannot be undone.`)) {
+        const employeeCode = '{{ employee.code }}';
+        // URL encode the employee code to handle any format
+        const encodedEmployeeCode = encodeURIComponent(employeeCode);
+        const deleteBtn = event.target.closest('.btn-delete');
+
+        // Show loading state
+        if (deleteBtn) {
+            deleteBtn.classList.add('btn-loading');
+            deleteBtn.disabled = true;
+        }
+
+        isSubmitting = true;
+
+        fetch(`/employee/${encodedEmployeeCode}/document/${documentType}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                setTimeout(() => {
+                    location.reload(); // Refresh to show updated documents
+                }, 1000);
+            } else {
+                showNotification('Error: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('An error occurred while deleting the document.', 'error');
+        })
+        .finally(() => {
+            isSubmitting = false;
+            if (deleteBtn) {
+                deleteBtn.classList.remove('btn-loading');
+                deleteBtn.disabled = false;
+            }
+        });
+    }
+}
+
+// Handle form submission
+document.getElementById('documentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    if (isSubmitting) return;
+
+    const employeeCode = '{{ employee.code }}';
+    // URL encode the employee code to handle any format (numeric, EMP-XXX, etc.)
+    const encodedEmployeeCode = encodeURIComponent(employeeCode);
+    const formData = new FormData();
+    const fileInput = document.getElementById('documentFile');
+    const submitBtn = document.getElementById('submitBtn');
+
+    if (!fileInput.files[0]) {
+        showNotification('Please select a file.', 'error');
+        return;
+    }
+
+    // Validate file size (5MB limit)
+    const fileSize = fileInput.files[0].size / 1024 / 1024; // in MB
+    if (fileSize > 5) {
+        showNotification('File size must be less than 5MB.', 'error');
+        return;
+    }
+
+    formData.append('document_file', fileInput.files[0]);
+
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+    isSubmitting = true;
+
+    fetch(`/employee/${encodedEmployeeCode}/document/${currentDocumentType}/update/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            closeEditModal();
+            setTimeout(() => {
+                location.reload(); // Refresh to show updated documents
+            }, 1500);
+        } else {
+            showNotification('Error: ' + data.error, 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-upload"></i> Update Document';
+            isSubmitting = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('An error occurred while updating the document.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Update Document';
+        isSubmitting = false;
+    });
+});
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('editModal');
+    if (event.target === modal) {
+        closeEditModal();
+    }
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeEditModal();
+    }
+});
+
+// CSRF token helper function
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Notification function
+function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    const existingNotifications = document.querySelectorAll('.custom-notification');
+    existingNotifications.forEach(notification => notification.remove());
+
+    const notification = document.createElement('div');
+    notification.className = `custom-notification alert alert-${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        min-width: 300px;
+        animation: slideInRight 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+
+    const icon = type === 'success' ? 'fa-check-circle' :
+                 type === 'error' ? 'fa-exclamation-circle' :
+                 'fa-info-circle';
+
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas ${icon}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+
+    document.body.appendChild(notification);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, 5000);
+}
+
+// Add CSS for notifications
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes slideOutRight {
+        from {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+    }
+
+    .alert-success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+    }
+
+    .alert-error {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+
+    /* Editable Field Styles */
+    .editable-field {
+        position: relative;
+        padding: 0.5rem;
+        border-radius: 4px;
+        transition: background-color 0.2s ease;
+    }
+
+    .editable-field:hover {
+        background-color: #f0f0f0;
+    }
+
+    .editable-field.editing {
+        background-color: #e8f4f8;
+    }
+
+    .field-value {
+        display: inline-block;
+        min-width: 150px;
+        margin-left: 0.5rem;
+    }
+
+    .edit-icon {
+        margin-left: 0.5rem;
+        color: #007bff;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        font-size: 0.85rem;
+    }
+
+    .editable-field:hover .edit-icon {
+        opacity: 1;
+    }
+
+    .edit-icon:hover {
+        color: #0056b3;
+    }
+
+    .field-input, .field-select {
+        padding: 0.4rem 0.6rem;
+        border: 2px solid #007bff;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        min-width: 200px;
+        background-color: white;
+        transition: all 0.2s ease;
+    }
+
+    .field-select {
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.6rem center;
+        padding-right: 2rem;
+    }
+
+    .field-input:focus, .field-select:focus {
+        outline: none;
+        border-color: #0056b3;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+
+    .field-actions {
+        display: inline-flex;
+        gap: 0.25rem;
+        margin-left: 0.5rem;
+    }
+
+    .btn-save-field, .btn-cancel-field {
+        padding: 0.25rem 0.5rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-save-field {
+        background: #28a745;
+        color: white;
+    }
+
+    .btn-save-field:hover {
+        background: #218838;
+    }
+
+    .btn-cancel-field {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-cancel-field:hover {
+        background: #5a6268;
+    }
+`;
+document.head.appendChild(style);
+
+// Inline field editing functionality
+{% if can_edit_profile and employee %}
+const employeeId = {{ employee.id }};
+const employeeCode = '{{ employee.code }}';
+// URL encode the employee code to handle any format
+const encodedEmployeeCode = encodeURIComponent(employeeCode);
+let editingField = null;
+
+// Department and Position options for selects
+const departments = [
+    {% for dept in departments %}
+    {id: {{ dept.id }}, name: "{{ dept.name }}"}{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+const positions = [
+    {% for pos in positions %}
+    {id: {{ pos.id }}, name: "{{ pos.name }}"}{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+const employmentTypes = ['Full Time', 'Part Time'];
+const statusOptions = [
+    { value: 1, label: 'Active' },
+    { value: 2, label: 'Inactive' },
+];
+const genderOptions = ['Male', 'Female', 'Other'];
+const maritalStatusOptions = ['Single', 'Married', 'Divorced', 'Widowed'];
+const teamOptions = [
+    { value: '', label: '-- Select Team --' },
+    { value: 'Sir Ahsan', label: 'Sir Ahsan' },
+    { value: 'Sir Faisal', label: 'Sir Faisal' },
+    { value: 'Sir Zubair', label: 'Sir Zubair' },
+    { value: 'Sir Govinda', label: 'Sir Govinda' },
+    { value: 'Sir Suhail', label: 'Sir Suhail' },
+    { value: 'HR', label: 'HR' },
+    { value: 'Social media', label: 'Social media' },
+    { value: 'Ecommerce', label: 'Ecommerce' },
+    { value: 'Accounts', label: 'Accounts' },
+    { value: 'Admin', label: 'Admin' },
+    { value: 'Sir Faizan', label: 'Sir Faizan' },
+    { value: 'Sir Ahtisham', label: 'Sir Ahtisham' },
+];
+const workModeOptions = ['Onsite', 'Remote', 'Hybrid'];
+
+// Handle field editing
+document.querySelectorAll('.editable-field').forEach(field => {
+    const editIcon = field.querySelector('.edit-icon');
+    if (!editIcon) return;
+
+    editIcon.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (editingField && editingField !== field) {
+            cancelEdit(editingField);
+        }
+        startEdit(field);
+    });
+});
+
+function startEdit(field) {
+    if (editingField) return;
+
+    editingField = field;
+    field.classList.add('editing');
+    const fieldName = field.getAttribute('data-field');
+    const fieldType = field.getAttribute('data-type');
+    const valueSpan = field.querySelector('.field-value');
+    // For username field, get value from code tag if it exists
+    let currentValue = valueSpan.getAttribute('data-value') || '';
+    if (fieldName === 'username') {
+        const codeTag = valueSpan.querySelector('code');
+        if (codeTag) {
+            currentValue = codeTag.textContent.trim();
+        }
+    }
+    const displayText = valueSpan.textContent.trim();
+
+    // Hide edit icon
+    field.querySelector('.edit-icon').style.display = 'none';
+
+    let input;
+    if (fieldType === 'select') {
+        input = document.createElement('select');
+        input.className = 'field-select';
+
+        if (fieldName === 'department') {
+            input.innerHTML = '<option value="">Not assigned</option>';
+            departments.forEach(dept => {
+                const selected = currentValue == dept.id ? 'selected' : '';
+                input.innerHTML += `<option value="${dept.id}" ${selected}>${dept.name}</option>`;
+            });
+        } else if (fieldName === 'position') {
+            input.innerHTML = '<option value="">Not assigned</option>';
+            positions.forEach(pos => {
+                const selected = currentValue == pos.id ? 'selected' : '';
+                input.innerHTML += `<option value="${pos.id}" ${selected}>${pos.name}</option>`;
+            });
+        } else if (fieldName === 'employment_type') {
+            employmentTypes.forEach(type => {
+                const selected = currentValue === type ? 'selected' : '';
+                input.innerHTML += `<option value="${type}" ${selected}>${type}</option>`;
+            });
+        } else if (fieldName === 'status') {
+            statusOptions.forEach(opt => {
+                const selected = currentValue == opt.value ? 'selected' : '';
+                input.innerHTML += `<option value="${opt.value}" ${selected}>${opt.label}</option>`;
+            });
+        } else if (fieldName === 'gender') {
+            input.innerHTML = '<option value="">Select Gender</option>';
+            genderOptions.forEach(opt => {
+                const selected = currentValue === opt ? 'selected' : '';
+                input.innerHTML += `<option value="${opt}" ${selected}>${opt}</option>`;
+            });
+        } else if (fieldName === 'marital_status') {
+            input.innerHTML = '<option value="">Select Status</option>';
+            maritalStatusOptions.forEach(opt => {
+                const selected = currentValue === opt ? 'selected' : '';
+                input.innerHTML += `<option value="${opt}" ${selected}>${opt}</option>`;
+            });
+        } else if (fieldName === 'team') {
+            teamOptions.forEach(opt => {
+                const selected = currentValue === opt.value ? 'selected' : '';
+                input.innerHTML += `<option value="${opt.value}" ${selected}>${opt.label}</option>`;
+            });
+        } else if (fieldName === 'work_mode') {
+            workModeOptions.forEach(opt => {
+                const selected = currentValue === opt ? 'selected' : '';
+                input.innerHTML += `<option value="${opt}" ${selected}>${opt}</option>`;
+            });
+        }
+    } else {
+        input = document.createElement('input');
+        input.type = fieldName === 'email' ? 'email' : 'text';
+        input.className = 'field-input';
+        input.value = currentValue;
+    }
+
+    // Create action buttons
+    const actions = document.createElement('span');
+    actions.className = 'field-actions';
+    actions.innerHTML = `
+        <button class="btn-save-field" title="Save"><i class="fas fa-check"></i></button>
+        <button class="btn-cancel-field" title="Cancel"><i class="fas fa-times"></i></button>
+    `;
+
+    // Replace value span with input
+    valueSpan.style.display = 'none';
+
+    // Find the container that holds the value span (the flex container)
+    const valueContainer = valueSpan.parentElement;
+
+    // Check if valueContainer is a flex container that contains both value and edit icon
+    const hasEditIconInContainer = valueContainer && valueContainer.querySelector && valueContainer.querySelector('.edit-icon');
+
+    if (valueContainer && valueContainer.tagName === 'SPAN' && valueContainer !== field && hasEditIconInContainer) {
+        // This is a flex container - hide it and insert input/actions after it
+        valueContainer.style.display = 'none';
+
+        // Insert input and actions after the flex container
+        if (valueContainer.nextSibling) {
+            valueContainer.parentNode.insertBefore(input, valueContainer.nextSibling);
+        } else {
+            valueContainer.parentNode.appendChild(input);
+        }
+        valueContainer.parentNode.appendChild(actions);
+    } else {
+        // Standard insertion: insert after valueSpan or at end
+        if (valueSpan.nextSibling) {
+            field.insertBefore(input, valueSpan.nextSibling);
+        } else {
+            field.appendChild(input);
+        }
+        field.appendChild(actions);
+    }
+
+    // Focus input
+    input.focus();
+    if (input.select) input.select();
+
+    // Save on Enter, Cancel on Escape
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            saveField(field, fieldName, input.value);
+        } else if (e.key === 'Escape') {
+            cancelEdit(field);
+        }
+    });
+
+    // Save button click
+    actions.querySelector('.btn-save-field').addEventListener('click', () => {
+        saveField(field, fieldName, input.value);
+    });
+
+    // Cancel button click
+    actions.querySelector('.btn-cancel-field').addEventListener('click', () => {
+        cancelEdit(field);
+    });
+}
+
+function cancelEdit(field) {
+    if (!field) return;
+
+    field.classList.remove('editing');
+    const input = field.querySelector('.field-input, .field-select');
+    const actions = field.querySelector('.field-actions');
+    const valueSpan = field.querySelector('.field-value');
+
+    if (input) input.remove();
+    if (actions) actions.remove();
+
+    // Restore the value container (flex container) if it was hidden
+    if (valueSpan) {
+        const valueContainer = valueSpan.parentElement;
+        if (valueContainer && valueContainer.tagName === 'SPAN' && valueContainer !== field) {
+            // Check if this is a flex container that contains the edit icon
+            const hasEditIcon = valueContainer.querySelector && valueContainer.querySelector('.edit-icon');
+            if (hasEditIcon) {
+                // This is the flex container - restore it
+                valueContainer.style.display = 'flex';
+            }
+        }
+        valueSpan.style.display = 'inline-block';
+    }
+
+    const editIcon = field.querySelector('.edit-icon');
+    if (editIcon) {
+        editIcon.style.display = 'inline-block';
+    }
+
+    editingField = null;
+}
+
+async function saveField(field, fieldName, newValue) {
+    if (!field) return;
+
+    const valueSpan = field.querySelector('.field-value');
+    const input = field.querySelector('.field-input, .field-select');
+    const actions = field.querySelector('.field-actions');
+    const saveBtn = actions?.querySelector('.btn-save-field');
+
+    // Show loading state
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    }
+
+    try {
+        const csrfToken = getCookie('csrftoken');
+        const formData = new FormData();
+        formData.append('field', fieldName);
+        formData.append('value', newValue);
+
+        const response = await fetch(`/employee/${encodedEmployeeCode}/update-field/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Update the display value
+            valueSpan.setAttribute('data-value', newValue);
+
+            // Update display text based on field type
+            if (fieldName === 'department') {
+                const dept = departments.find(d => d.id == newValue);
+                valueSpan.textContent = dept ? dept.name : 'Not assigned';
+            } else if (fieldName === 'position') {
+                const pos = positions.find(p => p.id == newValue);
+                valueSpan.textContent = pos ? pos.name : 'Not assigned';
+            } else if (fieldName === 'employment_type') {
+                valueSpan.textContent = newValue || 'Not provided';
+            } else if (fieldName === 'status') {
+                const badgeText = newValue == 1 || newValue === '1' ? 'Active' : 'Inactive';
+                const badgeClass = newValue == 1 || newValue === '1' ? 'badge-success' : 'badge-warning';
+                valueSpan.setAttribute('data-value', newValue);
+                valueSpan.innerHTML = `<span class="badge ${badgeClass}">${badgeText}</span>`;
+            } else if (fieldName === 'username') {
+                // Username is displayed inside a <code> tag
+                const codeTag = valueSpan.querySelector('code');
+                if (codeTag) {
+                    codeTag.textContent = newValue || 'Not provided';
+                } else {
+                    valueSpan.textContent = newValue || 'Not provided';
+                }
+            } else {
+                valueSpan.textContent = newValue || (fieldName === 'email' ? 'Not provided' : 'Not provided');
+            }
+
+            showNotification(data.message || 'Field updated successfully!', 'success');
+            cancelEdit(field);
+
+            // For username updates, force a full page reload to refresh the user session
+            if (fieldName === 'username') {
+                // Reload immediately to show updated username in navigation
+                setTimeout(() => {
+                    location.reload(true); // Force reload from server
+                }, 500);
+            } else {
+                // Reload page after a short delay to show updated data from database
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            }
+        } else {
+            showNotification(data.error || 'Error updating field', 'error');
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('An error occurred while updating the field', 'error');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+        }
+    }
+}
+{% endif %}
+
+// Additional Documents: create new entries dynamically
+{% if employee %}
+function openAdditionalDocModal() {
+    if (isSubmitting) return;
+
+    const modal = document.getElementById('additionalDocModal');
+    const form = document.getElementById('additionalDocForm');
+    const submitBtn = document.getElementById('additionalSubmitBtn');
+
+    form.reset();
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Document';
+
+    modal.style.display = 'block';
+}
+
+function closeAdditionalDocModal() {
+    if (isSubmitting) return;
+
+    const modal = document.getElementById('additionalDocModal');
+    const form = document.getElementById('additionalDocForm');
+
+    form.reset();
+    modal.style.display = 'none';
+}
+
+document.getElementById('additionalDocForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    if (isSubmitting) return;
+
+    const labelInput = document.getElementById('additionalLabel');
+    const fileInput = document.getElementById('additionalFile');
+    const submitBtn = document.getElementById('additionalSubmitBtn');
+    const employeeCode = '{{ employee.code }}';
+    // URL encode the employee code to handle any format
+    const encodedEmployeeCode = encodeURIComponent(employeeCode);
+
+    if (!labelInput.value.trim()) {
+        showNotification('Please provide a document title.', 'error');
+        labelInput.focus();
+        return;
+    }
+
+    if (!fileInput.files[0]) {
+        showNotification('Please select a file.', 'error');
+        return;
+    }
+
+    // Basic size validation (10MB)
+    const fileSizeMb = fileInput.files[0].size / 1024 / 1024;
+    if (fileSizeMb > 10) {
+        showNotification('File size must be less than 10MB.', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('label', labelInput.value.trim());
+    formData.append('document_file', fileInput.files[0]);
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+    isSubmitting = true;
+
+    fetch(`/employee/${encodedEmployeeCode}/additional-document/create/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: formData,
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message || 'Additional document uploaded successfully!', 'success');
+            closeAdditionalDocModal();
+            setTimeout(() => {
+                location.reload();
+            }, 1200);
+        } else {
+            showNotification('Error: ' + (data.error || 'Failed to upload document'), 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Document';
+            isSubmitting = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('An error occurred while uploading the additional document.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Document';
+        isSubmitting = false;
+    });
+});
+
+// Close additional doc modal when clicking outside
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('additionalDocModal');
+    if (event.target === modal) {
+        closeAdditionalDocModal();
+    }
+});
+{% endif %}
+
+// Photo Upload Functionality
+{% if can_edit_profile and employee %}
+function openPhotoUploadModal() {
+    // Check if profile is submitted (for employees)
+    {% if is_profile_submitted and not can_edit_documents %}
+    showNotification('You have already submitted your documents. You cannot make changes. Please contact administrator for any modifications.', 'error');
+    return;
+    {% endif %}
+
+    const modal = document.getElementById('photoUploadModal');
+    const form = document.getElementById('photoUploadForm');
+    const previewContainer = document.getElementById('photoPreviewContainer');
+    const preview = document.getElementById('photoPreview');
+
+    form.reset();
+    previewContainer.style.display = 'none';
+    preview.src = '';
+    modal.style.display = 'block';
+}
+
+// Add click handlers to photo elements when page loads
+(function() {
+    const canEdit = {% if can_edit_profile %}true{% else %}false{% endif %};
+    const canEditDocs = {% if can_edit_documents %}true{% else %}false{% endif %};
+    const isSubmitted = {% if is_profile_submitted %}true{% else %}false{% endif %};
+
+    function setupPhotoClickHandlers() {
+        if (!canEdit || (isSubmitted && !canEditDocs)) {
+            return;
+        }
+
+        const photoDisplay = document.getElementById('employeePhotoDisplay');
+        const photoPlaceholder = document.getElementById('employeePhotoPlaceholder');
+
+        if (photoDisplay) {
+            photoDisplay.style.cursor = 'pointer';
+            photoDisplay.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                openPhotoUploadModal();
+            });
+        }
+
+        if (photoPlaceholder) {
+            photoPlaceholder.style.cursor = 'pointer';
+            photoPlaceholder.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                openPhotoUploadModal();
+            });
+        }
+    }
+
+    // Try to set up handlers when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupPhotoClickHandlers);
+    } else {
+        setupPhotoClickHandlers();
+    }
+})();
+
+function closePhotoUploadModal() {
+    const modal = document.getElementById('photoUploadModal');
+    const form = document.getElementById('photoUploadForm');
+    const previewContainer = document.getElementById('photoPreviewContainer');
+    const preview = document.getElementById('photoPreview');
+
+    form.reset();
+    previewContainer.style.display = 'none';
+    preview.src = '';
+    modal.style.display = 'none';
+}
+
+// Preview photo before upload
+document.getElementById('photoFile')?.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const previewContainer = document.getElementById('photoPreviewContainer');
+    const preview = document.getElementById('photoPreview');
+
+    if (file) {
+        // Validate file size (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showNotification('Image size must be less than 5MB', 'error');
+            e.target.value = '';
+            previewContainer.style.display = 'none';
+            return;
+        }
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            showNotification('File must be an image', 'error');
+            e.target.value = '';
+            previewContainer.style.display = 'none';
+            return;
+        }
+
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            previewContainer.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        previewContainer.style.display = 'none';
+    }
+});
+
+// Handle photo upload form submission
+document.getElementById('photoUploadForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const form = e.target;
+    const fileInput = document.getElementById('photoFile');
+    const submitBtn = document.getElementById('photoSubmitBtn');
+    const employeeCode = '{{ employee.code }}';
+    // URL encode the employee code to handle any format
+    const encodedEmployeeCode = encodeURIComponent(employeeCode);
+
+    if (!fileInput.files[0]) {
+        showNotification('Please select a photo', 'error');
+        return;
+    }
+
+    // Validate file size
+    if (fileInput.files[0].size > 5 * 1024 * 1024) {
+        showNotification('Image size must be less than 5MB', 'error');
+        return;
+    }
+
+    // Disable submit button
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
+    try {
+        const formData = new FormData();
+        formData.append('photo', fileInput.files[0]);
+
+        const csrfToken = getCookie('csrftoken');
+        const response = await fetch(`/employee/${encodedEmployeeCode}/update-photo/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Update the displayed photo
+            const photoDisplay = document.getElementById('employeePhotoDisplay');
+            const photoPlaceholder = document.getElementById('employeePhotoPlaceholder');
+            const canEdit = {% if can_edit_profile %}true{% else %}false{% endif %};
+            const canEditDocs = {% if can_edit_documents %}true{% else %}false{% endif %};
+            const isSubmitted = {% if is_profile_submitted %}true{% else %}false{% endif %};
+
+            if (photoDisplay) {
+                // Update existing image
+                photoDisplay.src = data.photo_url + '?t=' + new Date().getTime(); // Add timestamp to prevent caching
+                // Re-add click handler if user can edit
+                if (canEdit && (!isSubmitted || canEditDocs)) {
+                    photoDisplay.style.cursor = 'pointer';
+                    photoDisplay.title = 'Click to change photo';
+                    // Remove old listeners and add new one
+                    const newPhoto = photoDisplay.cloneNode(true);
+                    photoDisplay.parentNode.replaceChild(newPhoto, photoDisplay);
+                    newPhoto.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openPhotoUploadModal();
+                    });
+                }
+            } else if (photoPlaceholder) {
+                // Replace placeholder with image
+                const newImg = document.createElement('img');
+                newImg.src = data.photo_url + '?t=' + new Date().getTime();
+                newImg.alt = 'Employee Photo';
+                newImg.className = 'employee-photo';
+                newImg.id = 'employeePhotoDisplay';
+                if (canEdit && (!isSubmitted || canEditDocs)) {
+                    newImg.style.cursor = 'pointer';
+                    newImg.title = 'Click to change photo';
+                    newImg.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openPhotoUploadModal();
+                    });
+                }
+                photoPlaceholder.parentNode.replaceChild(newImg, photoPlaceholder);
+            }
+
+            showNotification(data.message || 'Profile picture updated successfully!', 'success');
+            closePhotoUploadModal();
+            // Reload page after a short delay to show updated data from database
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showNotification(data.error || 'Error updating photo', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Photo';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('An error occurred while uploading the photo', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Photo';
+    }
+});
+
+// Close modal when clicking outside
+document.getElementById('photoUploadModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closePhotoUploadModal();
+    }
+});
+{% endif %}
+
+// Employees Table pagination - preserve query
+{% if all_employees %}
+(function() {
+    const perPageSelect = document.getElementById('perPageSelect');
+
+    if (perPageSelect) {
+        perPageSelect.addEventListener('change', function() {
+            const perPage = this.value;
+            const url = new URL(window.location.href);
+            url.searchParams.set('per_page', perPage);
+            url.searchParams.set('page', '1'); // Reset to first page
+            window.location.href = url.toString();
+        });
+    }
+})();
+{% endif %}
+
+// Delete employee confirmation
+function confirmDelete(employeeName, employeeCode) {
+    return confirm(`Are you sure you want to delete employee "${employeeName}" (ID: ${employeeCode})?\n\nThis action cannot be undone and will:\n- Delete the employee record\n- Cancel any active loans\n- Remove all associated data\n\nClick OK to confirm deletion.`);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,593 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Enrollment | Funprime Technology</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="{% static 'js/appearance.js' %}"></script>
+    <!-- jQuery and Select2 JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+</head>
+<body>
+    {% include "pages/splash_screen.html" %}
+    <script src="{% static 'js/splash.js' %}"></script>
+    <!-- Loading Screen -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    {% include "pages/sidebar.html" %}
+
+    <main class="main-content" id="mainContent">
+        {% include "pages/navigation.html" %}
+
+        <div class="page-content">
+            <div class="page-header fade-in-up">
+                <div>
+                    <h1>Device Enrollment</h1>
+                    <p class="text-muted">Enroll employees for fingerprint and face recognition</p>
+                </div>
+            </div>
+
+            <!-- Enrollment Form -->
+            <div class="modern-card fade-in-up">
+                <div class="modern-card-header">
+                    <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <h3>Enroll Employee</h3>
+                </div>
+                <div class="modern-card-body">
+                    <form id="enrollment-form">
+                        <div class="form-row" style="display: flex; gap: 1.5rem; margin-bottom: 1.5rem;">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="device-select" style="font-weight: 600; color: #4a5568; margin-bottom: 0.5rem; display: block;">Select Device *</label>
+                                <select id="device-select" class="form-control form-control-modern" required>
+                                    <option value="">-- Select Device --</option>
+                                    {% for device in devices %}
+                                    <option value="{{ device.id }}">{{ device.name }} ({{ device.ip_address }})</option>
+                                    {% endfor %}
+                                </select>
+                                {% if not devices %}
+                                <div class="alert alert-warning mt-2">
+                                    <i class="fas fa-exclamation-triangle"></i> No devices found!
+                                    <a href="{% url 'device_management' %}" class="alert-link">Add a device</a>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group" style="flex: 1;">
+                                <label for="employee-select" style="font-weight: 600; color: #4a5568; margin-bottom: 0.5rem; display: block;">Select Employee *</label>
+                                <select id="employee-select" class="form-control form-control-modern" required>
+                                    <option value="">-- Select Employee --</option>
+                                    {% for employee in employees %}
+                                    <option value="{{ employee.id }}">{{ employee.code }} - {{ employee.firstname }} {{ employee.lastname }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 2rem;">
+                            <label for="template-index" style="font-weight: 600; color: #4a5568; margin-bottom: 0.5rem; display: block;">Template Index (0-9)</label>
+                            <div style="display: flex; gap: 1rem; align-items: center; background: #f8fafc; padding: 0.75rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <input type="number" id="template-index" class="form-control form-control-modern" value="0" min="0" max="9" style="width: 80px; text-align: center; font-weight: bold;" required>
+                                <small class="text-muted mb-0"><i class="fas fa-info-circle mr-1"></i> Use different index numbers (0-9) to register multiple fingerprints for the same person.</small>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2.5rem;">
+                            <button type="button" class="btn btn-primary btn-lg" onclick="pushUserToDevice()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 0.8rem 2rem; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.25); flex: 1; min-width: 200px;">
+                                <i class="fas fa-upload mr-2"></i> Push User to Device
+                            </button>
+
+                            <button type="button" class="btn btn-info btn-lg" onclick="startFaceEnrollment()" style="background: white; color: #4299e1; border: 2px solid #bee3f8; padding: 0.8rem 2rem; flex: 1; min-width: 200px;">
+                                <i class="fas fa-smile mr-2"></i> Start Face Enrollment
+                            </button>
+                        </div>
+
+                        <!-- Real-time Fingerprint Enrollment Section -->
+                        <div class="realtime-enrollment-card" style="background: linear-gradient(135deg, #ebf4ff 0%, #fff 100%); border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                            <div style="padding: 1.5rem; border-bottom: 1px solid #e2e8f0; background: rgba(66, 153, 225, 0.05);">
+                                <h4 style="color: #2b6cb0; margin: 0; font-weight: 700; font-size: 1.1rem; display: flex; align-items: center;">
+                                    <span style="background: #bee3f8; padding: 8px; border-radius: 8px; margin-right: 12px; color: #2c5282;"><i class="fas fa-fingerprint"></i></span>
+                                    Real-Time Fingerprint Enrollment
+                                </h4>
+                            </div>
+                            <div style="padding: 2rem;">
+                                <p style="color: #4a5568; margin-bottom: 1.5rem; line-height: 1.6;">
+                                    This will trigger the device to enter enrollment mode immediately. Ensure the employee is standing in front of the selected device.
+                                </p>
+                                <button type="button" class="btn btn-success btn-lg" onclick="startFingerprintEnrollment()" style="width: 100%; padding: 1rem; font-size: 1.1rem; font-weight: bold; background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); border: none; box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3); transition: transform 0.2s;">
+                                    <i class="fas fa-fingerprint mr-2"></i> Start Fingerprint Enrollment Now
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div id="enrollment-status" class="mt-4"></div>
+                </div>
+            </div>
+
+            <!-- Recent Enrollments -->
+            <div class="modern-card fade-in-up mt-5">
+                <div class="modern-card-header" style="background: linear-gradient(135deg, #a0aec0 0%, #718096 100%);">
+                    <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <h3>Recent Enrollments</h3>
+                </div>
+                <div class="modern-card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Device</th>
+                                    <th>Employee</th>
+                                    <th>Type</th>
+                                    <th>Template</th>
+                                    <th>Status</th>
+                                    <th>Initiated By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for enrollment in recent_enrollments %}
+                                <tr>
+                                    <td>{{ enrollment.started_at|date:"M d, Y H:i" }}</td>
+                                    <td>{{ enrollment.device.name }}</td>
+                                    <td>
+                                        <span class="badge badge-light border">{{ enrollment.employee.code }}</span>
+                                        {{ enrollment.employee.firstname }}
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">
+                                            {% if enrollment.enrollment_type == 'fingerprint' %}
+                                                <i class="fas fa-fingerprint"></i> Fingerprint
+                                            {% else %}
+                                                <i class="fas fa-smile"></i> Face
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>{{ enrollment.template_index|default:"-" }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ enrollment.status }}">
+                                            {{ enrollment.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ enrollment.initiated_by.username|default:"System" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        <i class="fas fa-info-circle mr-2"></i> No enrollment history found
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Initialize Select2
+        $(document).ready(function() {
+            $('#employee-select').select2({
+                placeholder: "-- Select Employee --",
+                allowClear: true,
+                width: '100%'
+            });
+        });
+
+        function pushUserToDevice() {
+
+            const deviceId = document.getElementById('device-select').value;
+            const employeeId = document.getElementById('employee-select').value;
+
+            if (!deviceId || !employeeId) {
+                alert('Please select both device and employee');
+                return;
+            }
+
+            const statusDiv = document.getElementById('enrollment-status');
+            statusDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin"></i> Pushing user to device...</div>';
+
+            fetch('/api/device/push-user/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    device_id: deviceId,
+                    employee_id: employeeId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusDiv.innerHTML = `<div class="alert alert-success"><i class="fas fa-check"></i> ${data.message}</div>`;
+                } else {
+                    statusDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-times"></i> ${data.message}</div>`;
+                }
+            })
+            .catch(error => {
+                statusDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-times"></i> Error: ${error.message}</div>`;
+            });
+        }
+
+        function startFingerprintEnrollment() {
+            const deviceId = document.getElementById('device-select').value;
+            const employeeId = document.getElementById('employee-select').value;
+            const templateIndex = parseInt(document.getElementById('template-index').value);
+
+            if (!deviceId || !employeeId) {
+                alert('Please select both device and employee');
+                return;
+            }
+
+            const statusDiv = document.getElementById('enrollment-status');
+            statusDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin"></i> Starting fingerprint enrollment...</div>';
+
+            fetch('/api/device/enroll-fingerprint/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    device_id: deviceId,
+                    employee_id: employeeId,
+                    template_index: templateIndex
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-success" style="animation: pulse 2s infinite; border-left: 4px solid #10b981;">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div style="font-size: 2rem;">👆</div>
+                                <div style="flex: 1;">
+                                    <strong><i class="fas fa-check-circle"></i> ${data.message}</strong>
+                                    <div style="margin-top: 0.5rem; font-size: 0.9rem; color: #065f46;">
+                                        <i class="fas fa-hand-point-right"></i> <strong>The device is now waiting for fingerprint!</strong>
+                                        <br>Employee should place finger on device scanner now.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    // Add pulsing animation
+                    if (!document.getElementById('pulse-animation-style')) {
+                        const style = document.createElement('style');
+                        style.id = 'pulse-animation-style';
+                        style.textContent = `
+                            @keyframes pulse {
+                                0%, 100% { opacity: 1; transform: scale(1); }
+                                50% { opacity: 0.9; transform: scale(1.01); }
+                            }
+                        `;
+                        document.head.appendChild(style);
+                    }
+
+                    // Add "Verify Enrollment" button after a delay
+                    setTimeout(() => {
+                        const verifyButton = document.createElement('button');
+                        verifyButton.className = 'btn btn-success mt-3';
+                        verifyButton.innerHTML = '<i class="fas fa-check-circle"></i> Verify Enrollment (Click after fingerprint is done)';
+                        verifyButton.onclick = function() {
+                            verifyFingerprintEnrollment(deviceId, employeeId, templateIndex);
+                        };
+                        statusDiv.appendChild(verifyButton);
+                    }, 2000);
+
+                    // Add "Cancel Enrollment" button immediately
+                    const cancelButton = document.createElement('button');
+                    cancelButton.className = 'btn btn-danger mt-3 ml-2';
+                    cancelButton.innerHTML = '<i class="fas fa-times-circle"></i> Cancel Enrollment';
+                    cancelButton.onclick = function() {
+                        cancelFingerprintEnrollment(deviceId);
+                    };
+                    statusDiv.appendChild(cancelButton);
+
+                } else {
+                    statusDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-times"></i> ${data.message}</div>`;
+                }
+            })
+            .catch(error => {
+                statusDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-times"></i> Error: ${error.message}</div>`;
+            });
+        }
+
+        function startFaceEnrollment() {
+            const deviceId = document.getElementById('device-select').value;
+            const employeeId = document.getElementById('employee-select').value;
+            const templateIndex = parseInt(document.getElementById('template-index').value);
+
+            if (!deviceId || !employeeId) {
+                alert('Please select both device and employee');
+                return;
+            }
+
+            const statusDiv = document.getElementById('enrollment-status');
+            statusDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin"></i> Starting face enrollment...</div>';
+
+            fetch('/api/device/enroll-face/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    device_id: deviceId,
+                    employee_id: employeeId,
+                    template_index: templateIndex
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusDiv.innerHTML = `<div class="alert alert-success"><i class="fas fa-check"></i> ${data.message}<br><small>Please follow the device instructions to complete enrollment.</small></div>`;
+                } else {
+                    statusDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-times"></i> ${data.message}</div>`;
+                }
+            })
+            .catch(error => {
+                statusDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-times"></i> Error: ${error.message}</div>`;
+            });
+        }
+
+        function cancelFingerprintEnrollment(deviceId) {
+            const statusDiv = document.getElementById('enrollment-status');
+
+            // Show loading state on the button itself if possible, or replace status
+            // statusDiv.innerHTML = '<div class="alert alert-warning"><i class="fas fa-spinner fa-spin"></i> Cancelling...</div>';
+
+            fetch('/api/device/cancel-enrollment/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    device_id: deviceId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusDiv.innerHTML = `<div class="alert alert-warning"><i class="fas fa-ban"></i> Enrollment Cancelled</div>`;
+                } else {
+                    alert('Failed to cancel: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error cancelling: ' + error.message);
+            });
+        }
+
+        function cancelFingerprintEnrollment(deviceId) {
+            const statusDiv = document.getElementById('enrollment-status');
+
+            // Show loading state on the button itself if possible, or replace status
+            // statusDiv.innerHTML = '<div class="alert alert-warning"><i class="fas fa-spinner fa-spin"></i> Cancelling...</div>';
+
+            fetch('/api/device/cancel-enrollment/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    device_id: deviceId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusDiv.innerHTML = `<div class="alert alert-warning"><i class="fas fa-ban"></i> Enrollment Cancelled</div>`;
+                } else {
+                    alert('Failed to cancel: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error cancelling: ' + error.message);
+            });
+        }
+
+        function verifyFingerprintEnrollment(deviceId, employeeId, templateIndex) {
+            const statusDiv = document.getElementById('enrollment-status');
+            const verifyMsg = statusDiv.querySelector('.verify-message') || document.createElement('div');
+            verifyMsg.className = 'verify-message alert alert-info mt-2';
+            verifyMsg.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying enrollment on device...';
+            if (!statusDiv.querySelector('.verify-message')) {
+                statusDiv.appendChild(verifyMsg);
+            }
+
+            fetch('/api/device/verify-enrollment/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    device_id: deviceId,
+                    employee_id: employeeId,
+                    template_index: templateIndex
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    verifyMsg.className = 'verify-message alert alert-success mt-2';
+                    verifyMsg.innerHTML = `<i class="fas fa-check-circle"></i> <strong>Success!</strong> ${data.message}`;
+                } else {
+                    verifyMsg.className = 'verify-message alert alert-warning mt-2';
+                    verifyMsg.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${data.message}<br><small>If fingerprint was just completed, wait a few seconds and try again.</small>`;
+                }
+            })
+            .catch(error => {
+                verifyMsg.className = 'verify-message alert alert-danger mt-2';
+                verifyMsg.innerHTML = `<i class="fas fa-times"></i> Error verifying: ${error.message}`;
+            });
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // WebSocket for enrollment updates
+        let ws = null;
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/device/events/`;
+
+        ws = new WebSocket(wsUrl);
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            if (data.type === 'enrollment_update') {
+                const statusDiv = document.getElementById('enrollment-status');
+                const enrollment = data.data;
+                if (enrollment.status === 'completed') {
+                    // Auto-verify enrollment when completion is received
+                    const deviceId = document.getElementById('device-select').value;
+                    // Get value from Select2 or standard input
+                    const employeeId = $('#employee-select').val() || document.getElementById('employee-select').value;
+                    const templateIndex = parseInt(document.getElementById('template-index').value);
+
+                    if (deviceId && employeeId) {
+
+                        statusDiv.innerHTML = `<div class="alert alert-info"><i class="fas fa-spinner fa-spin"></i> Enrollment completed! Verifying registration on device...</div>`;
+                        setTimeout(() => {
+                            verifyFingerprintEnrollment(deviceId, employeeId, templateIndex);
+                        }, 2000);
+
+                    // Add "Cancel Enrollment" button immediately
+                    const cancelButton = document.createElement('button');
+                    cancelButton.className = 'btn btn-danger mt-3 ml-2';
+                    cancelButton.innerHTML = '<i class="fas fa-times-circle"></i> Cancel Enrollment';
+                    cancelButton.onclick = function() {
+                        cancelFingerprintEnrollment(deviceId);
+                    };
+                    statusDiv.appendChild(cancelButton);
+
+                } else {
+                        statusDiv.innerHTML = `<div class="alert alert-success"><i class="fas fa-check"></i> Enrollment completed successfully!</div>`;
+                    }
+                } else if (enrollment.status === 'failed') {
+                    statusDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-times"></i> Enrollment failed: ${enrollment.message}</div>`;
+                }
+            }
+        };
+    </script>
+
+    <style>
+        /* Select2 Customization for Modern Theme */
+        .select2-container--default .select2-selection--single {
+            height: 50px;
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background-color: #fff;
+            transition: all 0.3s ease;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 28px;
+            color: #4a5568;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 48px;
+            right: 10px;
+        }
+
+        .select2-dropdown {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .select2-search__field {
+            border-radius: 8px !important;
+            padding: 8px !important;
+        }
+
+        /* Dark Mode Support for Select2 */
+        [data-theme="dark"] .select2-container--default .select2-selection--single {
+            background-color: #2d3748;
+            border-color: #4a5568;
+        }
+
+        [data-theme="dark"] .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #e2e8f0;
+        }
+
+        [data-theme="dark"] .select2-dropdown {
+            background-color: #2d3748;
+            border-color: #4a5568;
+        }
+
+        [data-theme="dark"] .select2-search__field {
+            background-color: #1a202c;
+            color: #e2e8f0;
+            border-color: #4a5568;
+        }
+
+        [data-theme="dark"] .select2-results__option {
+            background-color: #2d3748;
+            color: #e2e8f0;
+        }
+
+        [data-theme="dark"] .select2-results__option--highlighted[aria-selected] {
+            background-color: #4a5568; /* Hover color in dark mode */
+            color: #fff;
+        }
+
+        [data-theme="dark"] .select2-container--default .select2-results__option[aria-selected=true] {
+            background-color: #4a5568;
+        }
+
+        /* Dark mode adjustments for enrollment page */
+        [data-theme="dark"] .modern-card {
+            background: var(--bg-card);
+            box-shadow: var(--shadow-md);
+        }
+        [data-theme="dark"] .modern-card-header {
+            box-shadow: var(--shadow-sm);
+        }
+        [data-theme="dark"] .modern-card-body {
+            background: transparent;
+        }
+        [data-theme="dark"] .realtime-enrollment-card {
+            background: #1a202c;
+            border-color: var(--border-color);
+            box-shadow: var(--shadow-md);
+        }
+        [data-theme="dark"] .realtime-enrollment-card p {
+            color: var(--text-light);
+        }
+    </style>
+</body>
+</html>

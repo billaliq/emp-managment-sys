@@ -1,0 +1,256 @@
+/* employee.css - Styles for Employee Management Interface */
+        /* Additional styles for employee management */
+        .input-error {
+            border-color: #f56565 !important;
+            background: #fff5f5 !important;
+        }
+        .tab-container {
+            margin-bottom: 1.5rem;
+        }
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            background: var(--bg-light);
+            color: var(--text-dark);
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        .tab.active {
+            background: var(--gradient-primary);
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+            background: var(--bg-light);
+            color: var(--text-dark);
+        }
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        .file-upload-w{
+            width: 50% !important;
+        }
+        .file-upload-input {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .file-upload-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1rem;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-light);
+            color: var(--text-light);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .file-upload-label:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        .file-upload-label i {
+            margin-right: 0.5rem;
+        }
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .employee-photo {
+            width: 120px;
+            height: 120px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 2px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .employee-photo:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-color: var(--primary-color);
+        }
+        .photo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .document-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .document-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-light);
+        }
+        .document-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .document-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--gradient-primary);
+            color: white;
+        }
+        .document-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        .additional-documents {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        .additional-upload {
+            display: grid;
+            grid-template-columns: minmax(200px, 1fr) minmax(200px, 2fr) auto;
+            gap: 0.75rem;
+            align-items: center;
+            padding: 0.75rem;
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-light);
+        }
+        .additional-upload .file-upload {
+            width: 100%;
+        }
+        .additional-upload .remove-upload {
+            color: #dc3545;
+            border: 1px solid #dc3545;
+            background: transparent;
+            border-radius: 6px;
+            padding: 0.4rem 0.75rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .additional-upload .remove-upload:hover {
+            background: #dc3545;
+            color: #fff;
+        }
+        .additional-upload-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .upload-date {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-top: 0.15rem;
+            display: block;
+        }
+        .file-upload-label .file-upload-selected {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            gap: 0.75rem;
+        }
+        .file-upload-selected-main {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            flex: 1;
+            min-width: 0;
+        }
+        .file-upload-selected-main .file-name {
+            font-weight: 500;
+            color: #059669;
+            word-break: break-all;
+        }
+        .file-upload-selected-main .file-meta {
+            display: block;
+        }
+        .file-upload-selected .file-icon {
+            color: #10b981;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .clear-upload-btn {
+            border: none;
+            background: #fee2e2;
+            color: #b91c1c;
+            border-radius: 999px;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .clear-upload-btn i {
+            margin: 0;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }

@@ -1,0 +1,64 @@
+<!-- navigation.html -->
+<!-- Top Navigation -->
+<header class="topbar">
+    <div class="topbar-left">
+        <button class="menu-toggle" id="menuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="company-title">
+            <span class="company-name">Funprime Technology</span>
+        </div>
+    </div>
+    <div class="topbar-right">
+        <button class="theme-toggle" id="themeToggle">
+            <i class="fas fa-moon"></i>
+        </button>
+        <a href="{% url 'logout' %}" class="logout-btn" onclick="return confirmLogout()" title="Logout (Ctrl+Q)">
+            <i class="fas fa-sign-out-alt"></i>
+        </a>
+        <div class="user-profile" id="userProfile">
+            <div class="user-avatar">
+                {% if request.user.first_name %}
+                    {{ request.user.first_name|first }}{{ request.user.last_name|first }}
+                {% else %}
+                    {{ request.user.username|first|upper }}
+                {% endif %}
+            </div>
+            <div class="user-info">
+                <h4>{{ request.user.get_full_name|default:request.user.username }}</h4>
+                <p>
+                    {% if request.user.is_superuser %}
+                        Superuser
+                    {% elif request.user.profile %}
+                        {{ request.user.profile.get_role_display|default:"User" }}
+                    {% else %}
+                        User
+                    {% endif %}
+                </p>
+            </div>
+            <i class="fas fa-chevron-down"></i>
+            <div class="user-dropdown" id="userDropdown">
+                <a href="#" class="user-dropdown-item">
+                    <i class="fas fa-user"></i>
+                    Profile
+                </a>
+                <a href="/settings" class="user-dropdown-item">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </a>
+                <a href="#" class="user-dropdown-item">
+                    <i class="fas fa-question-circle"></i>
+                    Help
+                </a>
+                <div class="dropdown-divider"></div>
+                <a href="{% url 'logout' %}" class="user-dropdown-item logout-item" onclick="return confirmLogout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- AI Assistant Card -->
+{% include "pages/ai_card.html" %}

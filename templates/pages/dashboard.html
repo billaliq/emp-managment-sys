@@ -1,0 +1,376 @@
+{% load static %}
+{% load settings_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funprime Technology | Employee Information System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="{% static 'js/appearance.js' %}"></script>
+</head>
+<body>
+    {% include "pages/splash_screen.html" %}
+    <script src="{% static 'js/splash.js' %}"></script>
+    <!-- Loading Screen -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    {% include "pages/sidebar.html" %}
+
+    <!-- Main Content -->
+    <main class="main-content sidebar-{{ system_settings.sidebar_width|default:'normal' }}" id="mainContent">
+        <!-- Top Navigation -->
+        {% include "pages/navigation.html" %}
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <div class="page-header fade-in-up">
+                <h1>Dashboard</h1>
+                <p>Welcome back! Here's what's happening in your organization.</p>
+            </div>
+
+            {% if is_birthday_today %}
+            <!-- Birthday Banner for Employee -->
+            <div class="birthday-banner fade-in-up" style="background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%); border-radius: 12px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1.5rem; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);">
+                <div style="font-size: 3rem;">🎂</div>
+                <div style="flex: 1;">
+                    <h2 style="color: #fff; margin: 0 0 0.25rem 0; font-size: 1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                        🎉 Happy Birthday, {{ current_employee.firstname }}! 🎉
+                    </h2>
+                    <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 1rem;">
+                        Wishing you a wonderful day filled with joy and happiness!
+                    </p>
+                </div>
+                <div style="font-size: 3rem;">🎈</div>
+            </div>
+            {% endif %}
+
+            <!-- Display Django messages -->
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+
+            {% if user_role != 'employee' %}
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card fade-in-up">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <span class="stat-change positive">+5.2%</span>
+                    </div>
+                    <div class="stat-number">{{ active_employees }}</div>
+                    <div class="stat-label">Total active employees</div>
+                </div>
+                <div class="stat-card success fade-in-up">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <span class="stat-change positive">+2.1%</span>
+                    </div>
+                    <div class="stat-number">{{ present_employees }}</div>
+                    <div class="stat-label">Present employees</div>
+                </div>
+                <div class="stat-card fade-in-up">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-slash"></i>
+                        </div>
+                        <span class="stat-change negative">-</span>
+                    </div>
+                    <div class="stat-number">{{ absent_employees }}</div>
+                    <div class="stat-label">Absent employees</div>
+                </div>
+                <div class="stat-card warning fade-in-up">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                        <span class="stat-change positive">+1</span>
+                    </div>
+                    <div class="stat-number">{{ total_positions }}</div>
+                    <div class="stat-label">Positions</div>
+                </div>
+                <div class="stat-card fade-in-up">
+                    <div class="stat-header">
+                        <div class="stat-icon">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <span class="stat-change positive">+1</span>
+                    </div>
+                    <div class="stat-number">{{ total_departments }}</div>
+                    <div class="stat-label">Department</div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Charts Section -->
+            <div class="charts-grid">
+                <div class="chart-container fade-in-up">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Employee Distribution by Department</h3>
+                        <div class="chart-actions">
+                            <button class="chart-action-btn" id="downloadDepartmentChart" title="Download Chart">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="chart-action-btn" id="expandDepartmentChart" title="Expand Chart">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="chart-canvas">
+                        <canvas id="departmentChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container fade-in-up">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Gender Ratio</h3>
+                        <div class="chart-actions">
+                            <button class="chart-action-btn">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="chart-canvas">
+                        <canvas id="genderChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Grid -->
+            <div class="content-grid">
+                {% if user_role != 'employee' %}
+                <div class="content-card fade-in-up">
+                    <div class="card-header">
+                        <h3 class="card-title">Recent Employees</h3>
+                        <a href="{% url 'employee' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i>
+                            Add Employee
+                        </a>
+                    </div>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Department</th>
+                                    <th>Position</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for emp in recent_employees %}
+                                <tr>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                            <div class="user-avatar" style="width: 35px; height: 35px; font-size: 0.8rem;">
+                                                {{ emp.firstname|default:""|first }}{{ emp.lastname|default:""|first }}
+                                            </div>
+                                            <div>
+                                                <div style="font-weight: 600;">{{ emp.firstname }} {{ emp.lastname }}</div>
+                                                <div style="font-size: 0.8rem; color: var(--text-light);">{{ emp.email|default:"—" }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ emp.department.name|default:"—" }}</td>
+                                    <td>{{ emp.position.name|default:"—" }}</td>
+                                    <td>
+                                        {% if emp.status == 1 %}
+                                        <span class="badge active">Active</span>
+                                        {% else %}
+                                        <span class="badge inactive">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'update_employee' emp.id %}" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.8rem;">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-light);">
+                                        No employees found.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if user_role != 'employee' %}
+                <div class="content-card fade-in-up">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-birthday-cake" style="color: #ff6b6b; margin-right: 0.5rem;"></i>Upcoming Birthdays</h3>
+                    </div>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        {% if upcoming_birthdays %}
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            {% for bday in upcoming_birthdays %}
+                            <div class="birthday-item {% if bday.is_today %}is-today{% endif %}">
+                                <div class="user-avatar {% if bday.is_today %}avatar-today{% endif %}" style="width: 40px; height: 40px; font-size: 0.85rem;">
+                                    {{ bday.employee.firstname|default:""|first }}{{ bday.employee.lastname|default:""|first }}
+                                </div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; font-size: 0.95rem;">
+                                        {{ bday.employee.firstname }} {{ bday.employee.lastname }}
+                                        {% if bday.is_today %}<span style="color: #ff6b6b; margin-left: 0.5rem;">🎂 Today!</span>{% endif %}
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: var(--text-light);">
+                                        {{ bday.date|date:"M d" }}
+                                        {% if not bday.is_today %}
+                                        <span style="margin-left: 0.5rem; color: #4a6cf7;">(in {{ bday.days_until }} day{{ bday.days_until|pluralize }})</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% if bday.is_today %}
+                                <span style="font-size: 1.5rem;">🎉</span>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div style="text-align: center; padding: 2rem; color: var(--text-light);">
+                            <i class="fas fa-calendar-alt" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
+                            <p>No upcoming birthdays in the next 30 days</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Quick Actions Bar at Bottom -->
+                <div class="quick-actions-bar fade-in-up" style="position: fixed; bottom: 0; left: 280px; right: 0; background: var(--bg-primary); border-top: 1px solid var(--border-color); padding: 1rem 2rem; display: flex; gap: 1rem; justify-content: center; z-index: 100; box-shadow: 0 -4px 20px rgba(0,0,0,0.08);">
+                    <a href="{% url 'employee' %}" class="btn btn-primary" style="padding: 0.75rem 1.5rem; border-radius: 8px;">
+                        <i class="fas fa-user-plus"></i>
+                        Add New Employee
+                    </a>
+                    <a href="{% url 'reports' %}" class="btn btn-secondary" style="padding: 0.75rem 1.5rem; border-radius: 8px;">
+                        <i class="fas fa-file-export"></i>
+                        Export Reports
+                    </a>
+                    <a href="{% url 'attendance' %}" class="btn btn-secondary" style="padding: 0.75rem 1.5rem; border-radius: 8px;">
+                        <i class="fas fa-calendar-alt"></i>
+                        View Attendance
+                    </a>
+                    <a href="{% url 'payroll' %}" class="btn btn-secondary" style="padding: 0.75rem 1.5rem; border-radius: 8px;">
+                        <i class="fas fa-money-bill-wave"></i>
+                        Payroll Management
+                    </a>
+                </div>
+                <style>
+                    .quick-actions-bar {
+                        background: rgba(248, 249, 252, 0.85) !important;
+                        backdrop-filter: blur(12px);
+                        -webkit-backdrop-filter: blur(12px);
+                    }
+                    [data-theme="dark"] .quick-actions-bar {
+                        background: rgba(26, 26, 46, 0.85) !important;
+                    }
+                    .birthday-item {
+                        display: flex;
+                        align-items: center;
+                        gap: 1rem;
+                        padding: 0.75rem;
+                        border-radius: 8px;
+                        background: var(--bg-secondary);
+                    }
+                    .birthday-item.is-today {
+                        background: linear-gradient(135deg, #fff5f5 0%, #fff0e6 100%);
+                        border: 1px solid #feca57;
+                    }
+                    .avatar-today {
+                        background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%) !important;
+                    }
+                    .main-content.sidebar-compact .quick-actions-bar { left: 220px; }
+                    .main-content.sidebar-normal .quick-actions-bar { left: 280px; }
+                    .main-content.sidebar-wide .quick-actions-bar { left: 340px; }
+                    .page-content { padding-bottom: 100px !important; }
+                    @media (max-width: 768px) {
+                        .quick-actions-bar { left: 0 !important; flex-wrap: wrap; padding: 0.75rem 1rem; }
+                        .quick-actions-bar .btn { flex: 1 1 45%; font-size: 0.85rem; padding: 0.5rem 0.75rem !important; }
+                    }
+                </style>
+                {% endif %}
+            </div>
+
+            <!-- Footer -->
+            <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border-color); text-align: center; color: var(--text-light);">
+                <p>© 2023 Employee Information System. All rights reserved.</p>
+            </footer>
+        </div>
+    </main>
+
+    <!-- Add Employee Modal -->
+    <div class="modal" id="addEmployeeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add New Employee</h2>
+                <button class="close-btn" id="closeModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="employeeForm" method="POST" action="{% url 'add_employee' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">First Name</label>
+                    <input type="text" class="form-input" name="firstname" placeholder="Enter first name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Last Name</label>
+                    <input type="text" class="form-input" name="lastname" placeholder="Enter last name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-input" name="email" placeholder="Enter email address">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Department</label>
+                    <select class="form-input" name="department" required>
+                        <option value="">Select Department</option>
+                        {% for department in departments %}
+                        <option value="{{ department.id }}">{{ department.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Position</label>
+                    <select class="form-input" name="position" required>
+                        <option value="">Select Position</option>
+                        {% for position in positions %}
+                        <option value="{{ position.id }}">{{ position.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Employee</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+   {{ department_stats|json_script:"department-data" }}
+{{ gender_stats|json_script:"gender-data" }}
+<script>
+    const departmentStats = JSON.parse(document.getElementById("department-data").textContent);
+    const genderStats = JSON.parse(document.getElementById("gender-data").textContent);
+</script>
+</body>
+</html>
+

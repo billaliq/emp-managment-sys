@@ -1,0 +1,274 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Employee Information System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/settings.css' %}">
+    <script src="{% static 'js/appearance.js' %}"></script>
+</head>
+<body>
+    {% include "pages/splash_screen.html" %}
+    <script src="{% static 'js/splash.js' %}"></script>
+
+        <!-- Sidebar -->
+
+        {% include "pages/sidebar.html" %}
+        <!-- Main Content -->
+        <main class="main-content sidebar-{{ system_settings.sidebar_width|default:'normal' }}" id="mainContent">
+            <!-- Top Navigation -->
+
+        {% include "pages/navigation.html" %}
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <div class="page-header fade-in-up">
+                    <h1>System Settings</h1>
+                    <p>Manage your account settings and system preferences</p>
+                </div>
+
+                <div class="settings-container">
+                    <!-- Settings Sidebar -->
+                    <div class="settings-sidebar">
+                        <div class="settings-nav">
+                            <div class="settings-nav-item active" data-target="general">
+                                <i class="fas fa-cog"></i>
+                                <span>General</span>
+                            </div>
+                            <div class="settings-nav-item" data-target="appearance">
+                                <i class="fas fa-paint-brush"></i>
+                                <span>Appearance</span>
+                            </div>
+                            <div class="settings-nav-item" data-target="notifications">
+                                <i class="fas fa-bell"></i>
+                                <span>Notifications</span>
+                            </div>
+                            <div class="settings-nav-item" data-target="security">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>Security</span>
+                            </div>
+                            <div class="settings-nav-item" data-target="privacy">
+                                <i class="fas fa-user-lock"></i>
+                                <span>Privacy</span>
+                            </div>
+                            <div class="settings-nav-item" data-target="backup">
+                                <i class="fas fa-database"></i>
+                                <span>Backup & Restore</span>
+                            </div>
+                            <div class="settings-nav-item" data-target="about">
+                                <i class="fas fa-info-circle"></i>
+                                <span>About</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Content -->
+                    <div class="settings-content">
+                        <!-- General Settings -->
+                        <div class="settings-section active" id="general">
+                            <div class="settings-section-header">
+                                <h2 class="settings-section-title">General Settings</h2>
+                                <p class="settings-section-description">Manage your basic system preferences and configuration</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">System Language</label>
+                                <select class="form-select setting-input" data-section="general" data-key="language" data-realtime="true">
+                                    <option value="en" {% if system_settings.language == 'en' %}selected{% endif %}>English</option>
+                                    <option value="es" {% if system_settings.language == 'es' %}selected{% endif %}>Spanish</option>
+                                    <option value="fr" {% if system_settings.language == 'fr' %}selected{% endif %}>French</option>
+                                    <option value="de" {% if system_settings.language == 'de' %}selected{% endif %}>German</option>
+                                    <option value="ar" {% if system_settings.language == 'ar' %}selected{% endif %}>Arabic</option>
+                                    <option value="ur" {% if system_settings.language == 'ur' %}selected{% endif %}>Urdu</option>
+                                </select>
+                                <small class="form-text text-muted"><i class="fas fa-check-circle text-success" style="display: none;"></i> <span class="save-status">Changes save automatically</span></small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Date Format</label>
+                                <select class="form-select setting-input" data-section="general" data-key="date_format" data-realtime="true">
+                                    <option value="mm/dd/yyyy" {% if system_settings.date_format == 'mm/dd/yyyy' %}selected{% endif %}>MM/DD/YYYY (12/31/2023)</option>
+                                    <option value="dd/mm/yyyy" {% if system_settings.date_format == 'dd/mm/yyyy' %}selected{% endif %}>DD/MM/YYYY (31/12/2023)</option>
+                                    <option value="yyyy-mm-dd" {% if system_settings.date_format == 'yyyy-mm-dd' %}selected{% endif %}>YYYY-MM-DD (2023-12-31)</option>
+                                </select>
+                                <small class="form-text text-muted"><i class="fas fa-check-circle text-success" style="display: none;"></i> <span class="save-status">Changes save automatically</span></small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Time Format</label>
+                                <select class="form-select setting-input" data-section="general" data-key="time_format" data-realtime="true">
+                                    <option value="12h" {% if system_settings.time_format == '12h' %}selected{% endif %}>12-hour format (2:30 PM)</option>
+                                    <option value="24h" {% if system_settings.time_format == '24h' %}selected{% endif %}>24-hour format (14:30)</option>
+                                </select>
+                                <small class="form-text text-muted"><i class="fas fa-check-circle text-success" style="display: none;"></i> <span class="save-status">Changes save automatically</span></small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Default Timezone</label>
+                                <select class="form-select setting-input" data-section="general" data-key="timezone" data-realtime="true">
+                                    <option value="utc-5" {% if system_settings.TIMEZONE == 'utc-5' %}selected{% endif %}>EST (UTC-05:00)</option>
+                                    <option value="utc-6" {% if system_settings.TIMEZONE == 'utc-6' %}selected{% endif %}>CST (UTC-06:00)</option>
+                                    <option value="utc-7" {% if system_settings.TIMEZONE == 'utc-7' %}selected{% endif %}>MST (UTC-07:00)</option>
+                                    <option value="utc-8" {% if system_settings.TIMEZONE == 'utc-8' %}selected{% endif %}>PST (UTC-08:00)</option>
+                                    <option value="utc+0" {% if system_settings.TIMEZONE == 'utc+0' %}selected{% endif %}>GMT (UTC+00:00)</option>
+                                    <option value="utc+5" {% if system_settings.TIMEZONE == 'utc+5' %}selected{% endif %}>PKT (UTC+05:00)</option>
+                                </select>
+                                <small class="form-text text-muted"><i class="fas fa-check-circle text-success" style="display: none;"></i> <span class="save-status">Changes save automatically</span></small>
+                            </div>
+                        </div>
+
+                        <!-- Appearance Settings -->
+                        <div class="settings-section" id="appearance">
+                            <div class="settings-section-header">
+                                <h2 class="settings-section-title">Appearance</h2>
+                                <p class="settings-section-description">Customize the look and feel of your application</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Theme</label>
+                                <div class="theme-options">
+                                    <div class="theme-option {% if system_settings.theme == 'default' %}active{% endif %}" data-section="appearance" data-key="theme" data-value="default" data-realtime="true">
+                                        <div class="theme-preview">
+                                            <div class="theme-primary"></div>
+                                            <div class="theme-secondary"></div>
+                                        </div>
+                                        <div class="theme-option-name">Default</div>
+                                    </div>
+                                    <div class="theme-option {% if system_settings.theme == 'indigo' %}active{% endif %}" data-section="appearance" data-key="theme" data-value="indigo" data-realtime="true">
+                                        <div class="theme-preview">
+                                            <div class="theme-primary" style="background: #4f46e5;"></div>
+                                            <div class="theme-secondary" style="background: #7c3aed;"></div>
+                                        </div>
+                                        <div class="theme-option-name">Indigo</div>
+                                    </div>
+                                    <div class="theme-option {% if system_settings.theme == 'emerald' %}active{% endif %}" data-section="appearance" data-key="theme" data-value="emerald" data-realtime="true">
+                                        <div class="theme-preview">
+                                            <div class="theme-primary" style="background: #059669;"></div>
+                                            <div class="theme-secondary" style="background: #0d9488;"></div>
+                                        </div>
+                                        <div class="theme-option-name">Emerald</div>
+                                    </div>
+                                    <div class="theme-option {% if system_settings.theme == 'crimson' %}active{% endif %}" data-section="appearance" data-key="theme" data-value="crimson" data-realtime="true">
+                                        <div class="theme-preview">
+                                            <div class="theme-primary" style="background: #dc2626;"></div>
+                                            <div class="theme-secondary" style="background: #ea580c;"></div>
+                                        </div>
+                                        <div class="theme-option-name">Crimson</div>
+                                    </div>
+                                </div>
+                                <small class="form-text text-muted"><i class="fas fa-check-circle text-success" style="display: none;"></i> <span class="save-status">Theme applied instantly</span></small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Dark Mode</label>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input setting-input" id="darkModeToggle"
+                                           data-section="appearance" data-key="dark_mode" data-realtime="true"
+                                           {% if system_settings.dark_mode %}checked{% endif %}>
+                                    <label class="form-check-label" for="darkModeToggle">Enable Dark Mode</label>
+                                </div>
+                                <small class="form-text text-muted"><i class="fas fa-check-circle text-success" style="display: none;"></i> <span class="save-status">Dark mode toggles instantly</span></small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Font Size</label>
+                                <select class="form-select setting-input" data-section="appearance" data-key="font_size" data-realtime="true">
+                                    <option value="small" {% if system_settings.font_size == 'small' %}selected{% endif %}>Small</option>
+                                    <option value="medium" {% if system_settings.font_size == 'medium' %}selected{% endif %}>Medium</option>
+                                    <option value="large" {% if system_settings.font_size == 'large' %}selected{% endif %}>Large</option>
+                                </select>
+                                <small class="form-text text-muted"><i class="fas fa-check-circle text-success" style="display: none;"></i> <span class="save-status">Font size updates instantly</span></small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Sidebar Width</label>
+                                <select class="form-select setting-input" data-section="appearance" data-key="sidebar_width" data-realtime="true">
+                                    <option value="compact" {% if system_settings.sidebar_width == 'compact' %}selected{% endif %}>Compact</option>
+                                    <option value="normal" {% if system_settings.sidebar_width == 'normal' %}selected{% endif %}>Normal</option>
+                                    <option value="wide" {% if system_settings.sidebar_width == 'wide' %}selected{% endif %}>Wide</option>
+                                </select>
+                                <small class="form-text text-muted"><i class="fas fa-check-circle text-success" style="display: none;"></i> <span class="save-status">Sidebar width updates instantly</span></small>
+                            </div>
+                        </div>
+
+                        <!-- Notification Settings -->
+                        <div class="settings-section" id="notifications">
+                            <div class="settings-section-header">
+                                <h2 class="settings-section-title">Notifications</h2>
+                                <p class="settings-section-description">Notification settings coming soon</p>
+                            </div>
+                            <p style="color: var(--text-light); text-align: center; padding: 2rem;">No settings available</p>
+                        </div>
+
+                        <!-- Security Settings -->
+                        <div class="settings-section" id="security">
+                            <div class="settings-section-header">
+                                <h2 class="settings-section-title">Security</h2>
+                                <p class="settings-section-description">Security settings coming soon</p>
+                            </div>
+                            <p style="color: var(--text-light); text-align: center; padding: 2rem;">No settings available</p>
+                        </div>
+
+                        <!-- Privacy Settings -->
+                        <div class="settings-section" id="privacy">
+                            <div class="settings-section-header">
+                                <h2 class="settings-section-title">Privacy Settings</h2>
+                                <p class="settings-section-description">Privacy settings coming soon</p>
+                            </div>
+                            <p style="color: var(--text-light); text-align: center; padding: 2rem;">No settings available</p>
+                        </div>
+
+                        <!-- Backup & Restore -->
+                        <div class="settings-section" id="backup">
+                            <div class="settings-section-header">
+                                <h2 class="settings-section-title">Backup & Restore</h2>
+                                <p class="settings-section-description">Backup settings coming soon</p>
+                            </div>
+                            <p style="color: var(--text-light); text-align: center; padding: 2rem;">No settings available</p>
+                        </div>
+
+                        <!-- About -->
+                        <div class="settings-section" id="about">
+                            <div class="settings-section-header">
+                                <h2 class="settings-section-title">About</h2>
+                                <p class="settings-section-description">Information about your EIS application</p>
+                            </div>
+
+                            <div class="about-content">
+                                <div class="about-item">
+                                    <h3>Employee Information System</h3>
+                                    <p>Version 1.0.0</p>
+                                </div>
+
+                                <div class="about-item">
+                                    <h4>System Information</h4>
+                                    <ul style="list-style: none; padding: 0;">
+                                        <li><strong>Last Updated:</strong> {{ system_settings.updated_at|date:"F d, Y" }}</li>
+                                        <li><strong>Database:</strong> SQLite</li>
+                                        <li><strong>Framework:</strong> Django 5.2.7</li>
+                                    </ul>
+                                </div>
+
+                                <div class="about-item">
+                                    <h4>Support</h4>
+                                    <p>For support and inquiries, please contact your system administrator.</p>
+                                </div>
+
+                                <div class="about-item">
+                                    <h4>License</h4>
+                                    <p>Proprietary - All rights reserved</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+
+    <script src="{% static 'js/settings.js' %}"></script>
+</body>
+</html>

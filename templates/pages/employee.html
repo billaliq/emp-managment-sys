@@ -1,0 +1,775 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Management - Funprime Technology | EIS</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/employee.css' %}">
+    <script src="{% static 'js/appearance.js' %}"></script>
+</head>
+<body>
+    {% include "pages/splash_screen.html" %}
+    <script src="{% static 'js/splash.js' %}"></script>
+    <!-- Loading Screen -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="dashboard">
+        <!-- Sidebar -->
+        {% include "pages/sidebar.html" %}
+
+        <!-- Main Content -->
+        <main class="main-content sidebar-{{ system_settings.sidebar_width|default:'normal' }}" id="mainContent">
+            <!-- Top Navigation -->
+            {% include "pages/navigation.html" %}
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <div class="page-header fade-in-up">
+                    <h1>Employee Management</h1>
+                    <p>View and manage employee information and records</p>
+                </div>
+
+                <!-- Employee Form (Visible to all logged-in users) -->
+                <div class="content-card fade-in-up">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            {% if is_admin_user %}
+                                Employee Details
+                            {% else %}
+                                My Employee Information
+                            {% endif %}
+                        </h3>
+                        {% if is_admin_user %}
+                        <div>
+                            <button class="btn btn-secondary" type="button" id="cancelBtn">
+                                <i class="fas fa-times"></i>
+                                Cancel
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Locked Message for Employees -->
+                    {% if is_locked and not is_admin_user %}
+                    <div class="alert alert-warning" style="margin: 1rem; padding: 1rem; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px;">
+                        <i class="fas fa-lock"></i>
+                        <strong>Profile Locked:</strong> Your profile information has already been submitted and cannot be edited.
+                        Please contact HR/Admin if you need to make changes.
+                    </div>
+                    {% endif %}
+
+                    <!-- Missing Documents Notification -->
+                    {% if missing_documents and missing_documents|length > 0 and not is_admin_user %}
+                    <div class="alert alert-info" style="margin: 1rem; padding: 1.25rem; background: #d1ecf1; border: 1px solid #0c5460; border-radius: 8px; border-left: 4px solid #0c5460;">
+                        <div style="display: flex; align-items: flex-start; gap: 1rem;">
+                            <i class="fas fa-exclamation-circle" style="font-size: 1.5rem; color: #0c5460; flex-shrink: 0;"></i>
+                            <div style="flex: 1;">
+                                <strong style="color: #0c5460; font-size: 1.1rem; display: block; margin-bottom: 0.75rem;">
+                                    <i class="fas fa-file-upload"></i> Missing Documents Required
+                                </strong>
+                                <p style="color: #0c5460; margin: 0 0 0.75rem 0;">
+                                    The following documents are missing from your profile. Please upload them to complete your profile:
+                                </p>
+                                <ul style="margin: 0; padding-left: 1.5rem; color: #0c5460;">
+                                    {% for doc in missing_documents %}
+                                    <li style="margin-bottom: 0.5rem;">
+                                        <strong>{{ doc.label }}</strong>
+                                        <span style="color: #856404;">(Required)</span>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                                <p style="color: #0c5460; margin: 0.75rem 0 0 0; font-size: 0.9rem;">
+                                    <i class="fas fa-info-circle"></i> You can upload these documents in the <strong>Documents</strong> tab below, even though your profile is locked.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Only ONE form wrapping all tabs -->
+                    <form id="employeeForm" method="POST" enctype="multipart/form-data" action="{% url 'add_employee' %}"
+                           data-is-locked="{% if is_locked and not is_admin_user %}true{% else %}false{% endif %}"
+                          data-is-admin="{% if is_admin_user %}true{% else %}false{% endif %}"
+                          {% if employee %}data-employee-id="{{ employee.id }}"{% endif %}
+                          novalidate>
+                        {% csrf_token %}
+                        {% if employee %}
+                        <input type="hidden" name="employee_id" value="{{ employee.id }}">
+                        {% endif %}
+
+                        <!-- Display Django messages -->
+                        {% if messages %}
+                        <div class="messages">
+                            {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">
+                                {{ message }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="tab-container">
+                            <div class="tabs">
+                                <div class="tab active" data-tab="personal">Personal Info</div>
+                                <div class="tab" data-tab="employment">Employment</div>
+                                <div class="tab" data-tab="bank">Bank Details</div>
+                                <div class="tab" data-tab="documents">Documents</div>
+                            </div>
+
+                            <!-- Personal Information Tab -->
+                            <div class="tab-content active" id="personalTab">
+                                <div class="photo-container">
+                                    <label class="form-label">Employee Photo</label>
+                                    <img src="https://via.placeholder.com/120" class="employee-photo" id="employeePhoto" style="cursor: pointer;" title="Click to upload photo">
+                                    <div class="file-upload file-upload-w">
+                                        <input type="file" class="file-upload-input" id="photoUpload" name="photo" accept="image/*" {% if is_locked and not is_admin_user and employee and employee.photo %}disabled{% endif %}>
+                                        <label for="photoUpload" class="file-upload-label" {% if is_locked and not is_admin_user and employee and employee.photo %}style="opacity: 0.6; cursor: not-allowed; pointer-events: none;"{% endif %}>
+                                            <i class="fas fa-upload"></i> Upload Photo
+                                        </label>
+                                    </div>
+                                </div>
+                                <!-- Employee ID field - editable for admin/HR, readonly for others -->
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Employee ID</label>
+                                        {% if is_admin_user %}
+                                        <input
+                                            type="text"
+                                            class="form-input"
+                                            id="employeeCodeDisplay"
+                                            name="code"
+                                            value="{% if employee and employee.code %}{{ employee.code }}{% elif next_employee_id %}{{ next_employee_id }}{% endif %}"
+                                            placeholder="Enter Employee ID"
+                                            required
+                                        >
+                                        <small class="form-text" style="color: var(--text-light);">
+                                            Admin/HR can assign or edit the employee ID. Must be unique.
+                                        </small>
+                                        {% else %}
+                                        <input
+                                            type="text"
+                                            class="form-input"
+                                            id="employeeCodeDisplay"
+                                            value="{% if employee and employee.code %}{{ employee.code }}{% elif next_employee_id %}{{ next_employee_id }}{% endif %}"
+                                            placeholder="Not assigned yet"
+                                            readonly
+                                        >
+                                        <input type="hidden" name="code" value="{% if employee and employee.code %}{{ employee.code }}{% elif next_employee_id %}{{ next_employee_id }}{% endif %}">
+                                        <small class="form-text" style="color: var(--text-light);">
+                                            This is the unique ID for this employee and cannot be changed.
+                                        </small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    {% if is_admin_user %}
+                                    <div class="form-group">
+                                        <label class="form-label">Team</label>
+                                        <select class="form-select" name="team">
+                                            <option value="">-- Select Team --</option>
+                                            <option value="Sir Faisal" {% if employee and employee.team == 'Sir Faisal' %}selected{% endif %}>Sir Faisal</option>
+                                            <option value="Sir Zubair" {% if employee and employee.team == 'Sir Zubair' %}selected{% endif %}>Sir Zubair</option>
+                                            <option value="Sir Govinda" {% if employee and employee.team == 'Sir Govinda' %}selected{% endif %}>Sir Govinda</option>
+                                            <option value="Sir Suhail" {% if employee and employee.team == 'Sir Suhail' %}selected{% endif %}>Sir Suhail</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Status</label>
+                                        <select class="form-select" name="status">
+                                            <option value="1" {% if employee and employee.status == 1 %}selected{% endif %}>Active</option>
+                                            <option value="2" {% if employee and employee.status == 2 %}selected{% endif %}>Inactive</option>
+                                        </select>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">First Name *</label>
+                                        <input type="text" class="form-input" name="firstname"
+                                               value="{% if employee %}{{ employee.firstname }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.firstname %}readonly{% endif %} required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Last Name</label>
+                                        <input type="text" class="form-input" name="lastname"
+                                               value="{% if employee %}{{ employee.lastname }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.lastname %}readonly{% endif %}>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Father's Name</label>
+                                        <input type="text" class="form-input" name="father_name"
+                                               value="{% if employee %}{{ employee.father_name }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.father_name %}readonly{% endif %}>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Date of Birth</label>
+                                        <input type="date" class="form-input" name="dob"
+                                               value="{% if employee and employee.dob %}{{ employee.dob|date:'Y-m-d' }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.dob %}readonly{% endif %}>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Gender</label>
+                                        <select class="form-select" name="gender" {% if is_locked and not is_admin_user and employee and employee.gender %}disabled{% endif %}>
+                                            <option value="">Select Gender</option>
+                                            <option value="Male" {% if employee and employee.gender == 'Male' %}selected{% endif %}>Male</option>
+                                            <option value="Female" {% if employee and employee.gender == 'Female' %}selected{% endif %}>Female</option>
+                                            <option value="Other" {% if employee and employee.gender == 'Other' %}selected{% endif %}>Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Marital Status</label>
+                                        <select class="form-select" name="marital_status" {% if is_locked and not is_admin_user and employee and employee.marital_status %}disabled{% endif %}>
+                                            <option value="">Select Status</option>
+                                            <option value="Single" {% if employee and employee.marital_status == 'Single' %}selected{% endif %}>Single</option>
+                                            <option value="Married" {% if employee and employee.marital_status == 'Married' %}selected{% endif %}>Married</option>
+                                            <option value="Divorced">Divorced</option>
+                                            <option value="Widowed">Widowed</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">National ID</label>
+                                        <input type="text" class="form-input" name="national_id" placeholder="Without dashes"
+                                               value="{% if employee %}{{ employee.national_id|default:'' }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.national_id %}readonly{% endif %}>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Blood Group</label>
+                                        <input type="text" class="form-input" name="blood_group"
+                                               value="{% if employee %}{{ employee.blood_group|default:'' }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.blood_group %}readonly{% endif %}>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Contact 1</label>
+                                        <input type="text" class="form-input" name="contact_1"
+                                               value="{% if employee %}{{ employee.contact_1|default:'' }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.contact_1 %}readonly{% endif %}>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Contact 2</label>
+                                        <input type="text" class="form-input" name="contact_2"
+                                               value="{% if employee %}{{ employee.contact_2|default:'' }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.contact_2 %}readonly{% endif %}>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Emergency Contact</label>
+                                        <input type="text" class="form-input" name="emergency_contact"
+                                               value="{% if employee %}{{ employee.emergency_contact|default:'' }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.emergency_contact %}readonly{% endif %}>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Emergency Contact Person</label>
+                                        <input type="text" class="form-input" name="emergency_contact_person"
+                                               value="{% if employee %}{{ employee.emergency_contact_person|default:'' }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.emergency_contact_person %}readonly{% endif %}>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Email</label>
+                                        <input type="email" class="form-input" name="email"
+                                               value="{% if employee %}{{ employee.email|default:'' }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.email %}readonly{% endif %}>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Official Email</label>
+                                        <input type="email" class="form-input" name="official_email"
+                                               value="{% if employee %}{{ employee.official_email|default:'' }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.official_email %}readonly{% endif %}>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Present Address</label>
+                                        <textarea class="form-textarea" name="present_address" {% if is_locked and not is_admin_user and employee and employee.present_address %}readonly{% endif %}>{% if employee %}{{ employee.present_address|default:'' }}{% endif %}</textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Permanent Address</label>
+                                        <textarea class="form-textarea" name="permanent_address" {% if is_locked and not is_admin_user and employee and employee.permanent_address %}readonly{% endif %}>{% if employee %}{{ employee.permanent_address|default:'' }}{% endif %}</textarea>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-secondary prev-tab-btn" data-prev="personalTab">Previous</button>
+                                    <button type="button" class="btn btn-primary next-tab-btn" data-next="employmentTab">Next</button>
+                                </div>
+                            </div>
+
+                            <!-- Employment Tab -->
+                            <div class="tab-content" id="employmentTab">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Department *</label>
+                                        <select class="form-select" name="department" required {% if is_locked and not is_admin_user and employee and employee.department %}disabled{% endif %}>
+                                            <option value="">Select Department</option>
+                                            {% for department in departments %}
+                                            <option value="{{ department.id }}" {% if employee and employee.department and employee.department.id == department.id %}selected{% endif %}>{{ department.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Position *</label>
+                                        <select class="form-select" name="position" required {% if is_locked and not is_admin_user and employee and employee.position %}disabled{% endif %}>
+                                            <option value="">Select Position</option>
+                                            {% for position in positions %}
+                                            <option value="{{ position.id }}" {% if employee and employee.position and employee.position.id == position.id %}selected{% endif %}>{{ position.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Job Title</label>
+                                        <input type="text" class="form-input" name="job_title"
+                                               value="{% if employee %}{{ employee.job_title|default:'' }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.job_title %}readonly{% endif %}>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Date Hired</label>
+                                        <input type="date" class="form-input" name="date_hired"
+                                               value="{% if employee and employee.date_hired %}{{ employee.date_hired|date:'Y-m-d' }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.date_hired %}readonly{% endif %}>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Date Permanent</label>
+                                        <input type="date" class="form-input" name="date_permanent"
+                                               value="{% if employee and employee.date_permanent %}{{ employee.date_permanent|date:'Y-m-d' }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.date_permanent %}readonly{% endif %}>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Registration No</label>
+                                        <input type="text" class="form-input" name="registration_no"
+                                               value="{% if employee %}{{ employee.registration_no|default:'' }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.registration_no %}readonly{% endif %}>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Work Mode</label>
+                                        <select class="form-select" name="work_mode" {% if is_locked and not is_admin_user and employee and employee.work_mode %}disabled{% endif %}>
+                                            <option value="Onsite">Onsite</option>
+                                            <option value="Remote">Remote</option>
+                                            <option value="Hybrid">Hybrid</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Employment Type</label>
+                                        <select class="form-select" name="employment_type" {% if is_locked and not is_admin_user and employee and employee.employment_type %}disabled{% endif %}>
+                                            <option value="Full Time">Full Time</option>
+                                            <option value="Part Time">Part Time</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Reporting To</label>
+                                        <input type="text" class="form-input" name="reporting_to"
+                                               value="{% if employee %}{{ employee.reporting_to|default:'' }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.reporting_to %}readonly{% endif %}>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Salary</label>
+                                        <input type="number" class="form-input" name="salary" step="0.01" min="0"
+                                               value="{% if employee and employee.salary %}{{ employee.salary }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.salary %}readonly{% endif %}>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Location</label>
+                                        <input type="text" class="form-input" name="location"
+                                               value="{% if employee and employee.location %}{{ employee.location }}{% else %}FunPrime Technology{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.location %}readonly{% endif %}>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-secondary prev-tab-btn" data-prev="personalTab">Previous</button>
+                                    <button type="button" class="btn btn-primary next-tab-btn" data-next="bankTab">Next</button>
+                                </div>
+                            </div>
+
+                            <!-- Bank Details Tab -->
+                            <div class="tab-content" id="bankTab">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Bank Name</label>
+                                        <input type="text" class="form-input" name="bank_name"
+                                               value="{% if employee %}{{ employee.bank_name|default:'' }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.bank_name %}readonly{% endif %}>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Branch Name</label>
+                                        <input type="text" class="form-input" name="branch_name"
+                                               value="{% if employee %}{{ employee.branch_name|default:'' }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.branch_name %}readonly{% endif %}>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Account Title</label>
+                                        <input type="text" class="form-input" name="account_title"
+                                               value="{% if employee %}{{ employee.account_title|default:'' }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.account_title %}readonly{% endif %}>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Account Number</label>
+                                        <input type="text" class="form-input" name="account_number"
+                                               value="{% if employee %}{{ employee.account_number|default:'' }}{% endif %}"
+                                               {% if is_locked and not is_admin_user and employee and employee.account_number %}readonly{% endif %}>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-secondary prev-tab-btn" data-prev="employmentTab">Previous</button>
+                                    <button type="button" class="btn btn-primary next-tab-btn" data-next="documentsTab">Next</button>
+                                </div>
+                            </div>
+
+                            <!-- Documents Tab -->
+                            <div class="tab-content" id="documentsTab">
+                                {% if is_locked and not is_admin_user %}
+                                <div class="alert alert-info" style="margin: 1rem 0; padding: 1rem; background: #d1ecf1; border: 1px solid #0c5460; border-radius: 8px; display: flex; align-items: center; gap: 0.75rem;">
+                                    <i class="fas fa-info-circle" style="font-size: 1.5rem; color: #0c5460;"></i>
+                                    <div>
+                                        <strong style="color: #0c5460;">Document Upload Policy:</strong>
+                                        <p style="margin: 0.25rem 0 0 0; color: #0c5460;">
+                                            Documents that have already been uploaded are locked and cannot be replaced. You can still upload any <strong>missing documents</strong> that are not yet uploaded.
+                                        </p>
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            CNIC Copy
+                                            {% if missing_documents %}
+                                                {% for doc in missing_documents %}
+                                                    {% if doc.field == 'cnic_copy' %}
+                                                        <span style="color: #dc3545; font-weight: bold;">* Missing</span>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                        </label>
+                                        <div class="file-upload">
+                                            <input type="file" class="file-upload-input" id="cnicUpload" name="cnic_copy" {% if is_locked and not is_admin_user and employee and employee.cnic_copy %}disabled{% endif %}>
+                                            <label for="cnicUpload" class="file-upload-label" data-default-label="Upload CNIC Copy" {% if is_locked and not is_admin_user and employee and employee.cnic_copy %}style="opacity: 0.6; cursor: not-allowed; pointer-events: none;"{% endif %}>
+                                                <i class="fas fa-upload"></i> Upload CNIC Copy
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            Passport Size Photo
+                                            {% if missing_documents %}
+                                                {% for doc in missing_documents %}
+                                                    {% if doc.field == 'passport_size_photo' %}
+                                                        <span style="color: #dc3545; font-weight: bold;">* Missing</span>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                        </label>
+                                        <div class="file-upload">
+                                            <input type="file" class="file-upload-input" id="passportUpload" name="passport_size_photo" accept="image/*" {% if is_locked and not is_admin_user and employee and employee.passport_size_photo %}disabled{% endif %}>
+                                            <label for="passportUpload" class="file-upload-label" data-default-label="Upload Photo" {% if is_locked and not is_admin_user and employee and employee.passport_size_photo %}style="opacity: 0.6; cursor: not-allowed; pointer-events: none;"{% endif %}>
+                                                <i class="fas fa-upload"></i> Upload Photo
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            Updated Resume
+                                            {% if missing_documents %}
+                                                {% for doc in missing_documents %}
+                                                    {% if doc.field == 'updated_resume' %}
+                                                        <span style="color: #dc3545; font-weight: bold;">* Missing</span>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                        </label>
+                                        <div class="file-upload">
+                                            <input type="file" class="file-upload-input" id="resumeUpload" name="updated_resume" accept=".pdf,.doc,.docx" {% if is_locked and not is_admin_user and employee and employee.updated_resume %}disabled{% endif %}>
+                                            <label for="resumeUpload" class="file-upload-label" data-default-label="Upload Resume" {% if is_locked and not is_admin_user and employee and employee.updated_resume %}style="opacity: 0.6; cursor: not-allowed; pointer-events: none;"{% endif %}>
+                                                <i class="fas fa-upload"></i> Upload Resume
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            Educational Certificate
+                                            {% if missing_documents %}
+                                                {% for doc in missing_documents %}
+                                                    {% if doc.field == 'educational_certificate' %}
+                                                        <span style="color: #dc3545; font-weight: bold;">* Missing</span>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                        </label>
+                                        <div class="file-upload">
+                                            <input type="file" class="file-upload-input" id="eduUpload" name="educational_certificate" accept=".pdf,.jpg,.jpeg,.png" {% if is_locked and not is_admin_user and employee and employee.educational_certificate %}disabled{% endif %}>
+                                            <label for="eduUpload" class="file-upload-label" data-default-label="Upload Certificate" {% if is_locked and not is_admin_user and employee and employee.educational_certificate %}style="opacity: 0.6; cursor: not-allowed; pointer-events: none;"{% endif %}>
+                                                <i class="fas fa-upload"></i> Upload Certificate
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            Experience Letter
+                                            {% if missing_documents %}
+                                                {% for doc in missing_documents %}
+                                                    {% if doc.field == 'experience_letter' %}
+                                                        <span style="color: #dc3545; font-weight: bold;">* Missing</span>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                        </label>
+                                        <div class="file-upload">
+                                            <input type="file" class="file-upload-input" id="expUpload" name="experience_letter" accept=".pdf,.jpg,.jpeg,.png" {% if is_locked and not is_admin_user and employee and employee.experience_letter %}disabled{% endif %}>
+                                            <label for="expUpload" class="file-upload-label" data-default-label="Upload Experience Letter" {% if is_locked and not is_admin_user and employee and employee.experience_letter %}style="opacity: 0.6; cursor: not-allowed; pointer-events: none;"{% endif %}>
+                                                <i class="fas fa-upload"></i> Upload Experience Letter
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            Signed Offer Letter
+                                            {% if missing_documents %}
+                                                {% for doc in missing_documents %}
+                                                    {% if doc.field == 'offer_letter_signed' %}
+                                                        <span style="color: #dc3545; font-weight: bold;">* Missing</span>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                        </label>
+                                        <div class="file-upload">
+                                            <input type="file" class="file-upload-input" id="offerUpload" name="offer_letter_signed" accept=".pdf,.jpg,.jpeg,.png" {% if is_locked and not is_admin_user and employee and employee.offer_letter_signed %}disabled{% endif %}>
+                                            <label for="offerUpload" class="file-upload-label" data-default-label="Upload Offer Letter" {% if is_locked and not is_admin_user and employee and employee.offer_letter_signed %}style="opacity: 0.6; cursor: not-allowed; pointer-events: none;"{% endif %}>
+                                                <i class="fas fa-upload"></i> Upload Offer Letter
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            Signed NDA Form
+                                            {% if missing_documents %}
+                                                {% for doc in missing_documents %}
+                                                    {% if doc.field == 'nda_form_signed' %}
+                                                        <span style="color: #dc3545; font-weight: bold;">* Missing</span>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                        </label>
+                                        <div class="file-upload">
+                                            <input type="file" class="file-upload-input" id="ndaUpload" name="nda_form_signed" accept=".pdf,.jpg,.jpeg,.png" {% if is_locked and not is_admin_user and employee and employee.nda_form_signed %}disabled{% endif %}>
+                                            <label for="ndaUpload" class="file-upload-label" data-default-label="Upload NDA Form" {% if is_locked and not is_admin_user and employee and employee.nda_form_signed %}style="opacity: 0.6; cursor: not-allowed; pointer-events: none;"{% endif %}>
+                                                <i class="fas fa-upload"></i> Upload NDA Form
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group full-width">
+                                        <label class="form-label">
+                                            Additional Documents
+                                            <span style="color: var(--text-light); font-weight: 400;">Optional uploads for any extra paperwork</span>
+                                        </label>
+                                        <div id="additionalDocumentsContainer" class="additional-documents"></div>
+                                        <div class="additional-upload-actions">
+                                            <button type="button"
+                                                    class="btn btn-outline-primary"
+                                                    id="addAdditionalDocumentBtn"
+                                                    {% if is_locked and not is_admin_user %}disabled{% endif %}>
+                                                <i class="fas fa-plus"></i> Add another document slot
+                                            </button>
+                                            <small class="text-muted">Use this to attach other supporting files (PDF, images, DOC).</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-secondary prev-tab-btn" data-prev="bankTab">Previous</button>
+                                    <button type="submit" class="btn btn-primary save-employee-btn">
+                                        <i class="fas fa-save"></i>
+                                        {% if employee %}
+                                            {% if is_admin_user %}
+                                                Update Employee
+                                            {% else %}
+                                                Submit My Information
+                                            {% endif %}
+                                        {% else %}
+                                            Add Employee
+                                        {% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="{% static 'js/employee.js' %}"></script>
+    <script type="application/json" id="employee-data">
+    {
+        "isLocked": {% if is_locked and not is_admin_user %}true{% else %}false{% endif %},
+        "isAdminUser": {% if is_admin_user %}true{% else %}false{% endif %},
+        "employee": {% if employee %}{
+            {% if employee.photo %}"photoUrl": "{{ employee.photo.url|escapejs }}",{% endif %}
+            {% if employee.gender %}"gender": "{{ employee.gender|escapejs }}",{% endif %}
+            {% if employee.marital_status %}"maritalStatus": "{{ employee.marital_status|escapejs }}",{% endif %}
+            {% if employee.work_mode %}"workMode": "{{ employee.work_mode|escapejs }}",{% endif %}
+            {% if employee.employment_type %}"employmentType": "{{ employee.employment_type|escapejs }}",{% endif %}
+            {% if employee.department %}"departmentId": {{ employee.department.id }},{% endif %}
+            {% if employee.position %}"positionId": {{ employee.position.id }}{% endif %}
+        }{% else %}null{% endif %}
+    }
+    </script>
+    <script>
+        // Parse employee data from JSON script tag
+        let employeeData = null;
+        try {
+            const dataScript = document.getElementById('employee-data');
+            if (dataScript) {
+                employeeData = JSON.parse(dataScript.textContent);
+            }
+        } catch (e) {
+            console.error('Error parsing employee data:', e);
+            employeeData = {
+                isLocked: document.getElementById('employeeForm')?.dataset.isLocked === 'true',
+                isAdminUser: document.getElementById('employeeForm')?.dataset.isAdmin === 'true',
+                employee: null
+            };
+        }
+
+        // Handle form locking and pre-filling for employees
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('employeeForm');
+            if (!form) return;
+
+            const isLocked = employeeData?.isLocked || form.dataset.isLocked === 'true';
+            const emp = employeeData?.employee;
+
+            // Handle form locking - only lock fields that have values
+            if (isLocked && !employeeData?.isAdminUser) {
+                // Lock only fields that already have values (are readonly/disabled from template)
+                const inputs = form.querySelectorAll('input[readonly], select[disabled], textarea[readonly]');
+                inputs.forEach(input => {
+                    input.style.cursor = 'not-allowed';
+                    input.style.opacity = '0.6';
+                });
+
+                // Disable file upload labels only for existing documents (already disabled in template)
+                const fileLabels = form.querySelectorAll('.file-upload-label');
+                fileLabels.forEach(label => {
+                    const fileInput = label.previousElementSibling || label.parentElement.querySelector('input[type="file"]');
+                    if (fileInput && fileInput.disabled) {
+                        label.style.pointerEvents = 'none';
+                        label.style.opacity = '0.6';
+                        label.style.cursor = 'not-allowed';
+                    }
+                });
+
+                // For disabled select fields, create hidden inputs to preserve values on submit
+                const disabledSelects = form.querySelectorAll('select:disabled');
+                disabledSelects.forEach(select => {
+                    // Check if hidden input already exists
+                    const existingHidden = form.querySelector(`input[type="hidden"][name="${select.name}"]`);
+                    if (!existingHidden) {
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = select.name;
+                        hiddenInput.value = select.value;
+                        select.parentNode.appendChild(hiddenInput);
+                    }
+                });
+            }
+
+            // Pre-fill employee photo if exists
+            if (emp && emp.photoUrl) {
+                const photoImg = document.getElementById('employeePhoto');
+                if (photoImg) {
+                    photoImg.src = emp.photoUrl;
+                }
+            }
+
+            // Pre-fill select fields that might not be set via template
+            if (emp) {
+                if (emp.gender) {
+                    const genderSelect = document.querySelector('select[name="gender"]');
+                    if (genderSelect && !genderSelect.value) {
+                        genderSelect.value = emp.gender;
+                    }
+                }
+
+                if (emp.maritalStatus) {
+                    const maritalSelect = document.querySelector('select[name="marital_status"]');
+                    if (maritalSelect && !maritalSelect.value) {
+                        maritalSelect.value = emp.maritalStatus;
+                    }
+                }
+
+                if (emp.workMode) {
+                    const workModeSelect = document.querySelector('select[name="work_mode"]');
+                    if (workModeSelect && !workModeSelect.value) {
+                        workModeSelect.value = emp.workMode;
+                    }
+                }
+
+                if (emp.employmentType) {
+                    const employmentTypeSelect = document.querySelector('select[name="employment_type"]');
+                    if (employmentTypeSelect && !employmentTypeSelect.value) {
+                        employmentTypeSelect.value = emp.employmentType;
+                    }
+                }
+
+                if (emp.departmentId) {
+                    const departmentSelect = document.querySelector('select[name="department"]');
+                    if (departmentSelect && !departmentSelect.value) {
+                        departmentSelect.value = emp.departmentId;
+                    }
+                }
+
+                if (emp.positionId) {
+                    const positionSelect = document.querySelector('select[name="position"]');
+                    if (positionSelect && !positionSelect.value) {
+                        positionSelect.value = emp.positionId;
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
