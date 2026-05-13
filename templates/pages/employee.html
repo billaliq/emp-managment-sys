@@ -641,7 +641,7 @@
             </div>
         </main>
     </div>
-    <script src="{% static 'js/employee.js' %}"></script>
+    <script type="module" src="{% static 'js/app/employees.app.js' %}"></script>
     <script type="application/json" id="employee-data">
     {
         "isLocked": {% if is_locked and not is_admin_user %}true{% else %}false{% endif %},
