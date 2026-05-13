@@ -123,8 +123,8 @@ class Command(BaseCommand):
             lastname = random.choice(LAST_NAMES)
 
             # Generate email
-            email = f"{firstname.lower()}.{lastname.lower()}{i}@funprime.com"
-            official_email = f"{firstname.lower()}.{lastname.lower()}@funprime.tech"
+            email = f"{firstname.lower()}.{lastname.lower()}{i}@Aliq.com"
+            official_email = f"{firstname.lower()}.{lastname.lower()}@Aliq.tech"
 
             # Generate dates
             today = timezone.now().date()
@@ -163,7 +163,7 @@ class Command(BaseCommand):
                 account_title=f"{firstname} {lastname}",
                 account_number=f"{random.randint(1000000000, 9999999999)}",
                 status=1,  # Active
-                location="FunPrime Technology",
+                location="Aliq Technology's",
             )
 
             created_count += 1

@@ -263,7 +263,7 @@ def get_increment_email_html(employee_name, increment, is_employee=False, is_fin
     </div>
     <div class="footer">
         <p><strong>Employee Information System</strong></p>
-        <p>FunPrime Technology</p>
+        <p>Aliq Technology's</p>
         <p style="font-size: 12px; color: #999;">This is an automated notification.</p>
     </div>
 </body>

@@ -111,7 +111,7 @@ class Command(BaseCommand):
 
                 # Prepare employee data
                 username = user_name.split()[0].lower() if user_name else f"user{user_id_str}"
-                official_email = f"{username}@funprimetechnology.com"
+                official_email = f"{username}@aliqtechnology.com"
 
                 if not dry_run:
                     # Create employee

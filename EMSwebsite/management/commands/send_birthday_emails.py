@@ -144,7 +144,7 @@ Wishing you a fantastic year ahead filled with success and happiness.
 
 Best regards,
 Employee Information System
-FunPrime Technology
+Aliq Technology's
         """.strip()
 
     def _get_birthday_html_message(self, name, age=None, employee=None):
@@ -213,7 +213,7 @@ FunPrime Technology
     </div>
     <div class="footer">
         <p><strong>Employee Information System</strong></p>
-        <p>FunPrime Technology</p>
+        <p>Aliq Technology's</p>
         <p style="font-size: 12px; color: #999;">This is an automated birthday notification.</p>
     </div>
 </body>

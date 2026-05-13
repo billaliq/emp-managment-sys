@@ -85,7 +85,7 @@ class Command(BaseCommand):
             password = provided_password
             use_same_password = True  # Use same password for all
         elif use_default:
-            password = "Funprimetechnology@1122"
+            password = "Aliqtechnology@1122"
             use_same_password = True
         else:
             password = None  # Will generate unique password for each
