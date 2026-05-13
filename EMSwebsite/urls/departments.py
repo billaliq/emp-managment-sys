@@ -1,5 +1,5 @@
 from django.urls import path
-from EMSwebsite.views.departments import (
+from EMSwebsite.controllers.departments import (
     departments, department_create, department_update, department_delete,
     get_department_json, get_department_employees, assign_employees_to_department,
 )

@@ -1,5 +1,5 @@
 from django.urls import path
-from EMSwebsite.views.positions import positions, add_position, update_position, delete_position
+from EMSwebsite.controllers.positions import positions, add_position, update_position, delete_position
 
 urlpatterns = [
     path('positions/', positions, name='positions'),

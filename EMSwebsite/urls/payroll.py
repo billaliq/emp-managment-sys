@@ -1,5 +1,5 @@
 from django.urls import path
-from EMSwebsite.views.payroll import (
+from EMSwebsite.controllers.payroll import (
     payroll, process_payroll, update_payroll_record, payroll_record_detail,
     request_salary_slip, approve_salary_slip, payroll_print,
     payroll_export_csv, payroll_export_excel, add_increment,

@@ -1,5 +1,5 @@
 from django.urls import path
-from EMSwebsite.views.loans import (
+from EMSwebsite.controllers.loans import (
     loans, create_loan, update_loan_status, add_repayment,
     get_loan_details, get_loan_repayments, export_loans_report,
     manage_loan_pool, get_loan_pool_status, get_employee_loan_eligibility,

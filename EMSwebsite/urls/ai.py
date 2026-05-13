@@ -1,6 +1,6 @@
 from django.urls import path
-from EMSwebsite.views.ai_assistant import ai_assistant, ai_chat_api
-from EMSwebsite.views.complaints import policy_management, submit_complaint, view_complaints, respond_to_complaint
+from EMSwebsite.controllers.ai_assistant import ai_assistant, ai_chat_api
+from EMSwebsite.controllers.complaints import policy_management, submit_complaint, view_complaints, respond_to_complaint
 
 urlpatterns = [
     # AI Assistant

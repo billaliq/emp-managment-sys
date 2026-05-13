@@ -1,5 +1,5 @@
 from django.urls import path
-from EMSwebsite.views.notifications import (
+from EMSwebsite.controllers.notifications import (
     api_notifications, mark_all_notifications_read, mark_notification_read,
 )
 

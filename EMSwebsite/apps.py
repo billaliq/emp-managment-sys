@@ -7,7 +7,7 @@ class EMSwebsiteConfig(AppConfig):
 
     def ready(self):
         # Import only when Django is ready
-        from .views.devices import start_sync_on_django_start
+        from .controllers.devices import start_sync_on_django_start
         start_sync_on_django_start()
         # Import signals to register them
         import EMSwebsite.signals

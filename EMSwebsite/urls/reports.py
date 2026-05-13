@@ -1,5 +1,5 @@
 from django.urls import path
-from EMSwebsite.views.reports import (
+from EMSwebsite.controllers.reports import (
     reports_dashboard, generate_report, view_report, download_report,
     delete_report, generate_from_template, get_report_status, get_recent_reports,
 )

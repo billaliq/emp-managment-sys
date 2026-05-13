@@ -1,6 +1,6 @@
 from django.urls import path
-from EMSwebsite.views.auth import login_view, logout_view, test_email, send_birthday_emails_manual
-from EMSwebsite.views.dashboard import dashboard
+from EMSwebsite.controllers.auth import login_view, logout_view, test_email, send_birthday_emails_manual
+from EMSwebsite.controllers.dashboard import dashboard
 
 urlpatterns = [
     path('', dashboard, name='dashboard'),

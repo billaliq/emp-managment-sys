@@ -1,5 +1,5 @@
 from django.urls import path
-from EMSwebsite.views.devices import (
+from EMSwebsite.controllers.devices import (
     device_management, device_enrollment, attendance_live,
     fetch_and_save_employees, fetch_and_save_attendance, check_device_status,
     api_device_create, api_device_delete, api_device_test_connection,
