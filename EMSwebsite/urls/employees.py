@@ -1,5 +1,5 @@
 from django.urls import path
-from EMSwebsite.views.employees import (
+from EMSwebsite.controllers.employees import (
     employee_profile, update_employee_field, update_employee_photo,
     reset_employee_password, get_employee_password, clear_employee_password,
     download_document, update_document, delete_document, create_additional_document,

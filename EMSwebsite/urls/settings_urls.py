@@ -1,5 +1,5 @@
 from django.urls import path
-from EMSwebsite.views.settings_views import (
+from EMSwebsite.controllers.settings_views import (
     settings, update_settings_ajax, get_settings_ajax,
     get_increment_settings, update_increment_settings,
 )

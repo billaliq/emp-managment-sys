@@ -1,5 +1,5 @@
 from django.urls import path
-from EMSwebsite.views.teams import (
+from EMSwebsite.controllers.teams import (
     team, add_team, team_details, team_members_attendance, update_team,
     add_team_members, remove_team_member, available_employees, add_project,
     delete_team, employee_details,

@@ -1,5 +1,5 @@
 from django.urls import path
-from EMSwebsite.views.attendance import (
+from EMSwebsite.controllers.attendance import (
     attendance, employee_attendance, generate_attendance_pdf, attendance_dashboard,
     attendance_list, mark_attendance, update_attendance, delete_attendance,
     get_attendance_json, attendance_statistics, export_attendance, attendance_filter_ajax,
