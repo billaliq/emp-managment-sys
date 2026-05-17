@@ -11,6 +11,15 @@ SECRET_KEY = 'django-insecure-h5b_mc-f5074tjo&)b4ah&i@h!jdbz#u&k+u-f3t_j%e+82*sh
 DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5174',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
 INSTALLED_APPS = [
     'daphne',  # Must be at the top for Channels to handle runserver
     'jazzmin',
@@ -159,3 +168,12 @@ SITE_ID = 1
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# -----------------------------------------------------------
+# CSRF / Session cookie settings for development (Vite dev server proxy)
+# -----------------------------------------------------------
+CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_HTTPONLY = False   # JS must be able to read csrftoken cookie
+CSRF_COOKIE_SECURE = False     # HTTP is fine in local dev
+SESSION_COOKIE_SECURE = False
