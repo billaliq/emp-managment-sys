@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employee Management - Aliq Technology's | EMS</title>
+    <title>Employee Management - EB's Technology | EMS</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/employee.css' %}">
@@ -399,7 +399,7 @@
                                     <div class="form-group">
                                         <label class="form-label">Location</label>
                                         <input type="text" class="form-input" name="location"
-                                               value="{% if employee and employee.location %}{{ employee.location }}{% else %}Aliq Technology's{% endif %}"
+                                               value="{% if employee and employee.location %}{{ employee.location }}{% else %}EB's Technology{% endif %}"
                                                {% if is_locked and not is_admin_user and employee and employee.location %}readonly{% endif %}>
                                     </div>
                                 </div>

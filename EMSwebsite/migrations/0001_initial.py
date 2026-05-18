@@ -129,7 +129,7 @@ class Migration(migrations.Migration):
                 ('present_address', models.TextField(blank=True, null=True)),
                 ('permanent_address', models.TextField(blank=True, null=True)),
                 ('photo', models.ImageField(blank=True, null=True, upload_to='employee_photos/')),
-                ('location', models.CharField(default="Aliq Technology's", max_length=100)),
+                ('location', models.CharField(default="EB's Technology", max_length=100)),
                 ('work_mode', models.CharField(choices=[('Onsite', 'Onsite'), ('Remote', 'Remote'), ('Hybrid', 'Hybrid')], default='Onsite', max_length=10)),
                 ('employment_type', models.CharField(choices=[('Full Time', 'Full Time'), ('Part Time', 'Part Time')], default='Full Time', max_length=10)),
                 ('date_hired', models.DateField(blank=True, null=True)),

@@ -803,7 +803,7 @@ def add_employee(request):
                 emp.employment_type = data.get("employment_type", "Full Time") or emp.employment_type
                 emp.reporting_to = data.get("reporting_to", "").strip() or emp.reporting_to
                 emp.salary = int(data.get("salary", 0)) if data.get("salary") else emp.salary
-                emp.location = data.get("location", "Aliq Technology's") or emp.location
+                emp.location = data.get("location", "EB's Technology") or emp.location
                 emp.bank_name = data.get("bank_name", "").strip() or emp.bank_name
                 emp.branch_name = data.get("branch_name", "").strip() or emp.branch_name
                 emp.account_title = data.get("account_title", "").strip() or emp.account_title
@@ -819,7 +819,7 @@ def add_employee(request):
                     if not emp.work_mode: emp.work_mode = data.get("work_mode", "Onsite") or emp.work_mode
                     if not emp.employment_type: emp.employment_type = data.get("employment_type", "Full Time") or emp.employment_type
                     if not emp.reporting_to: emp.reporting_to = data.get("reporting_to", "").strip() or emp.reporting_to
-                    if not emp.location: emp.location = data.get("location", "Aliq Technology's") or emp.location
+                    if not emp.location: emp.location = data.get("location", "EB's Technology") or emp.location
                     if not emp.bank_name: emp.bank_name = data.get("bank_name", "").strip() or emp.bank_name
                     if not emp.branch_name: emp.branch_name = data.get("branch_name", "").strip() or emp.branch_name
                     if not emp.account_title: emp.account_title = data.get("account_title", "").strip() or emp.account_title
@@ -833,7 +833,7 @@ def add_employee(request):
                     emp.work_mode = data.get("work_mode", "Onsite") or emp.work_mode
                     emp.employment_type = data.get("employment_type", "Full Time") or emp.employment_type
                     emp.reporting_to = data.get("reporting_to", "").strip() or emp.reporting_to
-                    emp.location = data.get("location", "Aliq Technology's") or emp.location
+                    emp.location = data.get("location", "EB's Technology") or emp.location
                     emp.bank_name = data.get("bank_name", "").strip() or emp.bank_name
                     emp.branch_name = data.get("branch_name", "").strip() or emp.branch_name
                     emp.account_title = data.get("account_title", "").strip() or emp.account_title

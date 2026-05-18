@@ -144,7 +144,7 @@ Wishing you a fantastic year ahead filled with success and happiness.
 
 Best regards,
 Employee Information System
-Aliq Technology's
+EB's Technology
         """.strip()
 
     def _get_birthday_html_message(self, name, age=None, employee=None):

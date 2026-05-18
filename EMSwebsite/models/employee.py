@@ -166,7 +166,7 @@ class Employees(models.Model):
     present_address = models.TextField(blank=True, null=True)
     permanent_address = models.TextField(blank=True, null=True)
     photo = models.ImageField(upload_to='employee_photos/', blank=True, null=True)
-    location = models.CharField(max_length=100, default="Aliq Technology's")
+    location = models.CharField(max_length=100, default="EB's Technology")
     work_mode = models.CharField(max_length=10, choices=[('Onsite', 'Onsite'), ('Remote', 'Remote'), ('Hybrid', 'Hybrid')], default='Onsite')
     employment_type = models.CharField(max_length=10, choices=[('Full Time', 'Full Time'), ('Part Time', 'Part Time')], default='Full Time')
     date_hired = models.DateField(blank=True, null=True)
