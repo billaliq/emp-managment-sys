@@ -209,3 +209,39 @@ CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_HTTPONLY = False   # JS must be able to read csrftoken cookie
 CSRF_COOKIE_SECURE = False     # HTTP is fine in local dev
+
+import os
+import dj_database_url
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Safely fetch secret key or fallback locally
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'local-fallback-secret-key')
+
+# Automatically turn off Debug mode in production
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+
+# Allow Vercel domain naming conventions
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.vercel.app']
+CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app']
+
+# Default Local Database (SQLite)
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+
+# Override database settings when DATABASE_URL is available (Production)
+if 'DATABASE_URL' in os.environ:
+    DATABASES['default'] = dj_database_url.config(
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=600,
+        ssl_require=True
+    )
+
+# Static files arrangement for Vercel's compiler
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
