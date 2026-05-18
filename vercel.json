@@ -10,11 +10,7 @@
       "use": "@vercel/static"
     }
   ],
-  "routes": [
-    {
-      "src": "/static/(.*)",
-      "dest": "staticfiles_build/static/$1"
-    },
+ "routes": [
     {
       "src": "/(.*)",
       "dest": "EMS/wsgi.py"

@@ -242,6 +242,8 @@ if 'DATABASE_URL' in os.environ:
         ssl_require=True
     )
 
-# Static files arrangement for Vercel's compiler
+import os
+
 STATIC_URL = '/static/'
+# This perfectly matches the destination in your vercel.json
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
