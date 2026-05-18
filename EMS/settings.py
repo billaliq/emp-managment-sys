@@ -4,12 +4,25 @@ Django settings for EMS project.
 
 from pathlib import Path
 import os
+import urllib.parse as urlparse
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-h5b_mc-f5074tjo&)b4ah&i@h!jdbz#u&k+u-f3t_j%e+82*sh'
-DEBUG = True
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+
+def env_bool(name, default=False):
+    return os.environ.get(name, str(default)).strip().lower() in ('1', 'true', 'yes', 'on')
+
+
+def env_list(name, default=None):
+    raw = os.environ.get(name)
+    if raw is None:
+        return default if default is not None else []
+    return [item.strip() for item in raw.split(',') if item.strip()]
+
+
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-h5b_mc-f5074tjo&)b4ah&i@h!jdbz#u&k+u-f3t_j%e+82*sh')
+DEBUG = env_bool('DJANGO_DEBUG', True)
+ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', ['localhost', '127.0.0.1'])
 
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:5173',
@@ -19,6 +32,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
 ]
+CSRF_TRUSTED_ORIGINS += env_list('DJANGO_CSRF_TRUSTED_ORIGINS', [])
 
 INSTALLED_APPS = [
     'daphne',  # Must be at the top for Channels to handle runserver
@@ -81,12 +95,39 @@ CHANNEL_LAYERS = {
     },
 }
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    parsed_url = urlparse.urlparse(DATABASE_URL)
+    scheme = parsed_url.scheme
+    if scheme.startswith('postgres') or scheme.startswith('postgresql'):
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': parsed_url.path[1:],
+                'USER': parsed_url.username,
+                'PASSWORD': parsed_url.password,
+                'HOST': parsed_url.hostname,
+                'PORT': parsed_url.port or '5432',
+            }
+        }
+    elif scheme == 'sqlite':
+        db_path = parsed_url.path or str(BASE_DIR / 'db.sqlite3')
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': db_path,
+            }
+        }
+    else:
+        raise ValueError(f'Unsupported DATABASE_URL scheme: {scheme}')
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql',
@@ -147,13 +188,13 @@ else:
 # -----------------------------------------------------------
 # ✅ REAL EMAIL CONFIGURATION (GMAIL SMTP)
 # -----------------------------------------------------------
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'iqkhan768@gmail.com'  # Replace with your Gmail
-EMAIL_HOST_PASSWORD = 'jwap sgqj mqlm uzgx'  # Replace with your Gmail App Password
-DEFAULT_FROM_EMAIL = 'Employee Information System <iqkhan768@gmail.com>'
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_USE_TLS = env_bool('EMAIL_USE_TLS', True)
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'iqkhan768@gmail.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'jwap sgqj mqlm uzgx')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Employee Information System <iqkhan768@gmail.com>')
 
 # -----------------------------------------------------------
 # ✅ PASSWORD RESET SETTINGS
