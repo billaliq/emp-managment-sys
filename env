@@ -1,0 +1,33 @@
+# ---------------------------------------------------------------
+# Django Core
+# ---------------------------------------------------------------
+DJANGO_SECRET_KEY=django-insecure-h5b_mc-f5074tjo&)b4ah&i@h!jdbz#u&k+u-f3t_j%e+82*sh
+DJANGO_DEBUG=True
+DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+DJANGO_CSRF_TRUSTED_ORIGINS=
+
+# ---------------------------------------------------------------
+# Database — Supabase (PostgreSQL)
+# ---------------------------------------------------------------
+DB_NAME=postgres
+DB_USER=postgres.pdxfbqazgoijvtbusemk
+DB_PASSWORD=Whitesh@1010@
+DB_HOST=aws-1-ap-northeast-1.pooler.supabase.com
+DB_PORT=5432
+
+# ---------------------------------------------------------------
+# Email — Gmail SMTP
+# ---------------------------------------------------------------
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=iqkhan768@gmail.com
+EMAIL_HOST_PASSWORD=jwap sgqj mqlm uzgx
+DEFAULT_FROM_EMAIL=Employee Information System <iqkhan768@gmail.com>
+
+# ---------------------------------------------------------------
+# MongoDB Atlas (optional — only needed if using MongoDB features)
+# ---------------------------------------------------------------
+MONGODB_URI=
+MONGODB_DB_NAME=ems_database
