@@ -18,6 +18,7 @@ staticfiles/
 media/
 
 # Node / React
+node_modules/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
