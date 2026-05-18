@@ -213,7 +213,7 @@ Aliq Technology's
     </div>
     <div class="footer">
         <p><strong>Employee Information System</strong></p>
-        <p>Aliq Technology's</p>
+        <p> EB's Technology</p>
         <p style="font-size: 12px; color: #999;">This is an automated birthday notification.</p>
     </div>
 </body>

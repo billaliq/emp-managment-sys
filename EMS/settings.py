@@ -4,7 +4,9 @@ Django settings for EMS project.
 
 from pathlib import Path
 import os
-import urllib.parse as urlparse
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent.parent / '.env')
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -95,38 +97,27 @@ CHANNEL_LAYERS = {
     },
 }
 
-DATABASE_URL = os.environ.get('DATABASE_URL')
-if DATABASE_URL:
-    parsed_url = urlparse.urlparse(DATABASE_URL)
-    scheme = parsed_url.scheme
-    if scheme.startswith('postgres') or scheme.startswith('postgresql'):
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME': parsed_url.path[1:],
-                'USER': parsed_url.username,
-                'PASSWORD': parsed_url.password,
-                'HOST': parsed_url.hostname,
-                'PORT': parsed_url.port or '5432',
-            }
-        }
-    elif scheme == 'sqlite':
-        db_path = parsed_url.path or str(BASE_DIR / 'db.sqlite3')
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': db_path,
-            }
-        }
-    else:
-        raise ValueError(f'Unsupported DATABASE_URL scheme: {scheme}')
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'postgres'),
+        'USER': os.environ.get('DB_USER', ''),
+        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'HOST': os.environ.get('DB_HOST', ''),
+        'PORT': os.environ.get('DB_PORT', '5432'),
+        'OPTIONS': {
+            'sslmode': 'require',
+        },
     }
+}
+
+# SQLite (disabled — using Supabase PostgreSQL)
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 # DATABASES = {
 #     'default': {
@@ -217,4 +208,3 @@ CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_HTTPONLY = False   # JS must be able to read csrftoken cookie
 CSRF_COOKIE_SECURE = False     # HTTP is fine in local dev
-SESSION_COOKIE_SECURE = False

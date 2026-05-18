@@ -38,6 +38,13 @@
     box-sizing: border-box;
 }
 
+html {
+    font-size: 90%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overflow-x: hidden;
+}
+
 /* Body */
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -84,6 +91,7 @@ body {
     align-items: center;
     justify-content: center;
     padding: 2rem;
+    overflow: hidden;
 }
 
 /* Login Card */
@@ -465,7 +473,7 @@ body {
 @keyframes fadeInRight {
     from {
         opacity: 0;
-        transform: translateY(-50%) translateX(50px);
+        transform: translateY(-50%) translateX(30px);
     }
     to {
         opacity: 1;

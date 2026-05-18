@@ -163,7 +163,7 @@ class Command(BaseCommand):
                 account_title=f"{firstname} {lastname}",
                 account_number=f"{random.randint(1000000000, 9999999999)}",
                 status=1,  # Active
-                location="Aliq Technology's",
+                location="EB's Technology",
             )
 
             created_count += 1
