@@ -883,38 +883,54 @@
             {% endif %}
 
             {% if employee %}
-            <!-- Display Generated Password (Admin/HR only) -->
-            {% if generated_password and is_admin %}
-            <div class="alert alert-success fade-in-up" style="margin: 1rem 0; padding: 1.5rem; background: #d4edda; border: 2px solid #28a745; border-radius: 8px;">
-                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
-                    <i class="fas fa-key" style="font-size: 1.5rem; color: #28a745;"></i>
-                    <div style="flex: 1;">
-                        <h4 style="margin: 0; color: #155724;"><strong>🔐 New Employee Credentials</strong></h4>
-                        <p style="margin: 0.5rem 0 0 0; color: #155724;">Please share these credentials securely with the employee:</p>
+            <!-- Credentials Banner (Admin/HR only) -->
+            {% if is_admin or user_role == 'hr' %}
+            {% if generated_password %}
+            <div id="credentialsBanner" class="fade-in-up" style="margin: 1rem 0; padding: 1.25rem 1.5rem; background: linear-gradient(135deg,#d4edda,#c3e6cb); border: 2px solid #28a745; border-radius: 12px; display:flex; align-items:flex-start; gap:1rem;">
+                <i class="fas fa-key" style="font-size:1.5rem; color:#28a745; margin-top:2px;"></i>
+                <div style="flex:1;">
+                    <strong style="color:#155724; font-size:15px;">Employee Login Credentials Ready</strong>
+                    <p style="margin:4px 0 10px; color:#155724; font-size:13px;">Share these credentials securely with the employee. You can always view them in the Login Credentials section below.</p>
+                    <div style="display:flex; gap:24px; flex-wrap:wrap;">
+                        <span style="font-size:14px;"><strong>Username:</strong> <code style="background:#fff; padding:2px 8px; border-radius:4px; color:#155724;">{{ generated_username }}</code></span>
+                        <span style="font-size:14px;" id="bannerPwdWrap">
+                            <strong>Password:</strong>
+                            <code id="bannerPwd" style="background:#fff; padding:2px 8px; border-radius:4px; color:#28a745; font-weight:700; display:none;">{{ generated_password }}</code>
+                            <span id="bannerPwdDots" style="background:#fff; padding:2px 8px; border-radius:4px; color:#888;">••••••••••••</span>
+                            <button onclick="toggleBannerPwd()" style="border:none;background:none;cursor:pointer;color:#155724;font-size:13px;margin-left:4px;" title="Toggle visibility"><i class="fas fa-eye" id="bannerEye"></i></button>
+                        </span>
+                    </div>
+                    <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+                        <button onclick="copyBannerCredentials()" class="btn btn-sm btn-primary" style="padding:5px 14px;">
+                            <i class="fas fa-copy"></i> Copy Credentials
+                        </button>
                     </div>
                 </div>
-                <div style="background: white; padding: 1rem; border-radius: 6px; margin-top: 1rem; border: 1px solid #c3e6cb;">
-                    <p style="margin: 0.5rem 0;"><strong>Username:</strong> <code style="background: #f8f9fa; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 1.1rem;">{{ generated_username }}</code></p>
-                    <p style="margin: 0.5rem 0;"><strong>Password:</strong> <code style="background: #f8f9fa; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 1.1rem; font-weight: bold; color: #28a745;">{{ generated_password }}</code></p>
-                </div>
-                <button onclick="copyPassword()" class="btn btn-primary" style="margin-top: 1rem;">
-                    <i class="fas fa-copy"></i> Copy Password
-                </button>
-                <button onclick="clearPasswordDisplay()" class="btn btn-secondary" style="margin-top: 1rem; margin-left: 0.5rem;">
-                    <i class="fas fa-times"></i> Dismiss
-                </button>
             </div>
             <script>
-                function copyPassword() {
-                    const password = '{{ generated_password }}';
-                    navigator.clipboard.writeText(password).then(function() {
-                        alert('Password copied to clipboard!');
+                function toggleBannerPwd() {
+                    var pwd = document.getElementById('bannerPwd');
+                    var dots = document.getElementById('bannerPwdDots');
+                    var eye = document.getElementById('bannerEye');
+                    if (pwd.style.display === 'none') {
+                        pwd.style.display = 'inline';
+                        dots.style.display = 'none';
+                        eye.className = 'fas fa-eye-slash';
+                    } else {
+                        pwd.style.display = 'none';
+                        dots.style.display = 'inline';
+                        eye.className = 'fas fa-eye';
+                    }
+                }
+                function copyBannerCredentials() {
+                    var text = 'Username: {{ generated_username }}\nPassword: {{ generated_password }}';
+                    navigator.clipboard.writeText(text).then(function() {
+                        alert('Credentials copied to clipboard!');
                     });
                 }
-                function clearPasswordDisplay() {
-                    document.querySelector('.alert-success').style.display = 'none';
-                }
             </script>
+            {% endif %}
+            {% endif %}
             <script>
                 // Password toggle functionality
                 function togglePassword() {
@@ -948,7 +964,6 @@
                     if (passwordDisplay) {
                         const password = passwordDisplay.textContent.trim();
                         navigator.clipboard.writeText(password).then(function() {
-                            // Show a nice notification
                             const btn = event.target.closest('button');
                             const originalText = btn.innerHTML;
                             btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
@@ -963,7 +978,6 @@
                     }
                 }
             </script>
-            {% endif %}
 
             <!-- Employee Profile Header Card -->
             <div class="content-card fade-in-up" style="margin-bottom: 2rem;">
@@ -1433,54 +1447,91 @@
 
                 <!-- Employee Login Credentials (Admin/HR only) -->
                 {% if employee.user %}
-                    {% if is_admin or user_role == 'hr' %}
+                {% if is_admin or user_role == 'hr' %}
                 <hr>
                 <div class="profile-details">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <h4 style="margin: 0;"><i class="fas fa-key"></i> Login Credentials</h4>
-                        {% if generated_password %}
-                        <button id="togglePasswordBtn" class="btn btn-sm btn-secondary" onclick="togglePassword()" style="padding: 0.4rem 0.8rem;">
-                            <i class="fas fa-eye" id="togglePasswordIcon"></i> <span id="togglePasswordText">View Password</span>
-                        </button>
-                        {% endif %}
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:8px;">
+                        <h4 style="margin:0;"><i class="fas fa-key" style="color:#667eea;margin-right:6px;"></i>Login Credentials</h4>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            {% if generated_password %}
+                            <button class="btn btn-sm btn-secondary" onclick="toggleCredPassword()" style="padding:0.35rem 0.8rem;">
+                                <i class="fas fa-eye" id="credEyeIcon"></i> <span id="credEyeText">Show Password</span>
+                            </button>
+                            <button onclick="copyCredentials()" class="btn btn-sm btn-primary" style="padding:0.35rem 0.8rem;">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                            {% endif %}
+                            <a href="{% url 'reset_employee_password' employee.code %}" class="btn btn-sm btn-warning" style="padding:0.35rem 0.8rem;text-decoration:none;">
+                                <i class="fas fa-sync-alt"></i> Reset Password
+                            </a>
+                        </div>
                     </div>
+
+                    <!-- Role badge -->
+                    <p style="margin-bottom:0.75rem;">
+                        <strong>Access Role:</strong>
+                        <span style="background:#eaf0fb;color:#2471a3;border-radius:20px;padding:2px 12px;font-size:13px;font-weight:600;margin-left:6px;">
+                            Employee (limited access)
+                        </span>
+                    </p>
 
                     <p class="editable-field" data-field="username" data-type="text">
                         <strong>Username:</strong>
                         <span class="field-value" data-value="{{ generated_username|default:employee.user.username }}">
-                            <code style="background: #f8f9fa; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 1rem; margin-left: 0.5rem;">{{ generated_username|default:employee.user.username }}</code>
+                            <code style="background:#f8f9fa;padding:0.25rem 0.5rem;border-radius:4px;font-size:1rem;margin-left:0.5rem;">{{ generated_username|default:employee.user.username }}</code>
                         </span>
                         <span class="edit-icon" title="Click to edit username"><i class="fas fa-edit"></i></span>
                     </p>
 
-                    {% if generated_password %}
                     <p>
                         <strong>Password:</strong>
-                        <code id="passwordDisplay" style="background: #f8f9fa; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 1rem; margin-left: 0.5rem; font-weight: bold; color: #28a745; display: none;">{{ generated_password }}</code>
-                        <span id="passwordHidden" style="background: #f8f9fa; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 1rem; margin-left: 0.5rem; color: #6c757d;">••••••••••••</span>
+                        {% if generated_password %}
+                        <code id="credPasswordDisplay" style="background:#f8f9fa;padding:0.25rem 0.5rem;border-radius:4px;font-size:1rem;margin-left:0.5rem;font-weight:700;color:#28a745;display:none;">{{ generated_password }}</code>
+                        <span id="credPasswordDots" style="background:#f8f9fa;padding:0.25rem 0.5rem;border-radius:4px;font-size:1rem;margin-left:0.5rem;color:#6c757d;letter-spacing:2px;">••••••••••••</span>
+                        {% else %}
+                        <span style="margin-left:0.5rem;color:#6c757d;font-size:13px;font-style:italic;">
+                            <i class="fas fa-info-circle"></i> Not stored — use Reset Password to generate a new one.
+                        </span>
+                        {% endif %}
                     </p>
-                    <div style="margin-top: 0.5rem;">
-                        <button onclick="copyPasswordToClipboard()" class="btn btn-sm btn-primary" style="padding: 0.4rem 0.8rem; margin-right: 0.5rem;">
-                            <i class="fas fa-copy"></i> Copy Password
-                        </button>
-                        <a href="{% url 'reset_employee_password' employee.code %}" class="btn btn-sm btn-warning" style="padding: 0.4rem 0.8rem; text-decoration: none; display: inline-block;">
-                            <i class="fas fa-sync-alt"></i> Reset Password
-                        </a>
-                    </div>
-                    {% else %}
-                    <p style="color: #6c757d; font-style: italic;">
-                        <i class="fas fa-info-circle"></i> Password is not available. It may have been cleared for security reasons.
+
+                    <p style="margin-top:0.5rem;font-size:12px;color:#888;">
+                        <i class="fas fa-shield-alt"></i> These credentials are only visible to Admin and HR. Share them with the employee to grant system access.
                     </p>
-                    <div style="margin-top: 0.5rem;">
-                        <a href="{% url 'reset_employee_password' employee.code %}" class="btn btn-sm btn-warning" style="padding: 0.4rem 0.8rem; text-decoration: none; display: inline-block;">
-                            <i class="fas fa-sync-alt"></i> Reset Password
-                        </a>
-                    </div>
-                    {% endif %}
-                    </div>
+                </div>
                 </div>
             </div>
-                    {% endif %}
+
+                <script>
+                    function toggleCredPassword() {
+                        var disp = document.getElementById('credPasswordDisplay');
+                        var dots = document.getElementById('credPasswordDots');
+                        var icon = document.getElementById('credEyeIcon');
+                        var txt  = document.getElementById('credEyeText');
+                        if (!disp) return;
+                        if (disp.style.display === 'none') {
+                            disp.style.display = 'inline';
+                            dots.style.display  = 'none';
+                            icon.className = 'fas fa-eye-slash';
+                            txt.textContent = 'Hide Password';
+                        } else {
+                            disp.style.display = 'none';
+                            dots.style.display  = 'inline';
+                            icon.className = 'fas fa-eye';
+                            txt.textContent = 'Show Password';
+                        }
+                    }
+                    function copyCredentials() {
+                        var uname = '{{ generated_username|default:employee.user.username }}';
+                        var pwd   = '{{ generated_password }}';
+                        var text  = 'Username: ' + uname + '\nPassword: ' + pwd;
+                        navigator.clipboard.writeText(text).then(function() {
+                            alert('Credentials copied to clipboard!');
+                        });
+                    }
+                    function copyPasswordToClipboard() { copyCredentials(); }
+                </script>
+                {% endif %}
                 {% endif %}
 
             <!-- Documents Section -->

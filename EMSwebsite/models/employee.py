@@ -301,6 +301,11 @@ def ensure_user_for_employee(sender, instance, created, **kwargs):
     user.is_active = True
     user.save(update_fields=["is_active"])
     Employees.objects.filter(pk=instance.pk).update(user=user, temp_password=generated_password)
+    # Create UserProfile so the employee can log in with scoped (employee-only) access
+    UserProfile.objects.get_or_create(
+        user=user,
+        defaults={'employee': instance, 'role': 'employee'}
+    )
 
 
 # ===========================

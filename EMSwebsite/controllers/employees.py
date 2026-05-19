@@ -907,24 +907,15 @@ def add_employee(request):
                 additional_docs_created += 1
 
             if is_new:
-                # Reload employee to get the temp_password set by the signal handler
+                # Reload to get temp_password set by the signal
                 emp.refresh_from_db()
-                generated_password = emp.temp_password
-
-                if generated_password and is_admin_user:
-                    # Display the generated password to admin
-                    messages.success(
-                        request,
-                        f"✅ Employee {emp.code} added successfully! "
-                        f"Generated Password: <strong>{generated_password}</strong> "
-                        f"(Username: {emp.user.username if emp.user else 'N/A'}) - "
-                        f"Please share this password securely with the employee."
-                    )
-                    # Clear the temporary password after displaying (for security)
-                    emp.temp_password = None
-                    emp.save(update_fields=['temp_password'])
-                else:
-                    messages.success(request, f"✅ Employee {emp.code} added successfully!")
+                username = emp.user.username if emp.user else 'N/A'
+                messages.success(
+                    request,
+                    f"✅ Employee {emp.code} added successfully! "
+                    f"Login credentials have been generated (Username: <strong>{username}</strong>). "
+                    f"View the full credentials in the employee profile."
+                )
             else:
                 if not is_admin_user:
                     # Check if only documents were uploaded
