@@ -29,7 +29,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-h5b_mc-f5074tj
 DEBUG = env_bool('DJANGO_DEBUG', True)
 
 # Merged Allowed Hosts (Local + Vercel)
-ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', ['localhost', '127.0.0.1', '.vercel.app'])
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.vercel.app', 'emp-managment-sys.vercel.app', '*']
 
 # Merged CSRF Trusted Origins
 CSRF_TRUSTED_ORIGINS = [
