@@ -2,18 +2,19 @@
 Django settings for EMS project.
 """
 
-from pathlib import Path
 import os
+import dj_database_url
+from pathlib import Path
 from dotenv import load_dotenv
 
+# Load environment variables from .env file if it exists
 load_dotenv(Path(__file__).resolve().parent.parent / '.env')
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
+# Helper functions for env variables
 def env_bool(name, default=False):
-    return os.environ.get(name, str(default)).strip().lower() in ('1', 'true', 'yes', 'on')
-
+    return os.environ.get(name, str(default)).strip().lower() in ('1', 'true', 'yes', 'on', 'True')
 
 def env_list(name, default=None):
     raw = os.environ.get(name)
@@ -21,11 +22,16 @@ def env_list(name, default=None):
         return default if default is not None else []
     return [item.strip() for item in raw.split(',') if item.strip()]
 
-
+# -----------------------------------------------------------
+# CORE SETTINGS
+# -----------------------------------------------------------
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-h5b_mc-f5074tjo&)b4ah&i@h!jdbz#u&k+u-f3t_j%e+82*sh')
 DEBUG = env_bool('DJANGO_DEBUG', True)
-ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', ['localhost', '127.0.0.1'])
 
+# Merged Allowed Hosts (Local + Vercel)
+ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', ['localhost', '127.0.0.1', '.vercel.app'])
+
+# Merged CSRF Trusted Origins
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
@@ -33,9 +39,13 @@ CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:5174',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
+    'https://*.vercel.app'
 ]
 CSRF_TRUSTED_ORIGINS += env_list('DJANGO_CSRF_TRUSTED_ORIGINS', [])
 
+# -----------------------------------------------------------
+# APPS & MIDDLEWARE
+# -----------------------------------------------------------
 INSTALLED_APPS = [
     'daphne',  # Must be at the top for Channels to handle runserver
     'jazzmin',
@@ -85,18 +95,19 @@ TEMPLATES = [
 WSGI_APPLICATION = 'EMS.wsgi.application'
 ASGI_APPLICATION = 'EMS.asgi.application'
 
-# Django Channels Configuration
+# -----------------------------------------------------------
+# CHANNELS (WEBSOCKETS)
+# -----------------------------------------------------------
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels.layers.InMemoryChannelLayer',  # For development
-        # For production, use Redis:
-        # 'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        # 'CONFIG': {
-        #     "hosts": [('127.0.0.1', 6379)],
-        # },
     },
 }
 
+# -----------------------------------------------------------
+# DATABASE SETTINGS
+# -----------------------------------------------------------
+# 1. First, set up your Supabase PostgreSQL via explicit env vars
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -106,31 +117,23 @@ DATABASES = {
         'HOST': os.environ.get('DB_HOST', ''),
         'PORT': os.environ.get('DB_PORT', '5432'),
         'OPTIONS': {
-            'sslmode': os.environ.get('DB_SSLMODE', 'disable'),  # 👈
+            'sslmode': os.environ.get('DB_SSLMODE', 'disable'),
             'options': '-c statement_timeout=60000',
         },
     }
 }
 
-# SQLite (disabled — using Supabase PostgreSQL)
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
+# 2. If Vercel (or local env) provides a combined DATABASE_URL string, override with dj_database_url
+if 'DATABASE_URL' in os.environ:
+    DATABASES['default'] = dj_database_url.config(
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=600,
+        ssl_require=True
+    )
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'hr_system',
-#         'USER': 'hr_system',
-#         'PASSWORD': 'Funtechblue.1199',
-#         'HOST': 'localhost',
-#         'PORT': '5432',
-#     }
-# }
-
+# -----------------------------------------------------------
+# AUTH & INTERNATIONALIZATION
+# -----------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
@@ -142,33 +145,34 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-STATIC_URL = 'static/'
-MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
-
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# -----------------------------------------------------------
+# STATIC & MEDIA FILES (Vercel Ready)
+# -----------------------------------------------------------
+STATIC_URL = '/static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
+# This perfectly matches the destination in your vercel.json
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
+
 # -----------------------------------------------------------
-# ✅ CACHE CONTROL SETTINGS
+# CACHE CONTROL SETTINGS
 # -----------------------------------------------------------
-# Disable caching in development mode
 if DEBUG:
-    # Disable WhiteNoise caching in development
     WHITENOISE_MAX_AGE = 0
-    # Use dummy cache (no caching)
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
         }
     }
 else:
-    # Production: Enable caching with reasonable max age
-    WHITENOISE_MAX_AGE = 31536000  # 1 year for static files
+    WHITENOISE_MAX_AGE = 31536000  # 1 year
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -176,9 +180,8 @@ else:
         }
     }
 
-
 # -----------------------------------------------------------
-# ✅ REAL EMAIL CONFIGURATION (GMAIL SMTP)
+# REAL EMAIL CONFIGURATION (GMAIL SMTP)
 # -----------------------------------------------------------
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
@@ -189,61 +192,20 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'jwap sgqj mqlm uzgx
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Employee Information System <iqkhan768@gmail.com>')
 
 # -----------------------------------------------------------
-# ✅ PASSWORD RESET SETTINGS
+# PASSWORD RESET & AUTH SETTINGS
 # -----------------------------------------------------------
-PASSWORD_RESET_TIMEOUT = 86400  # 24 hours (in seconds)
+PASSWORD_RESET_TIMEOUT = 86400  # 24 hours
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
 LOGIN_URL = '/login/'
 
-# Site ID for Django sites framework (required for password reset)
+# Site ID for Django sites framework
 SITE_ID = 1
 
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 # -----------------------------------------------------------
-# CSRF / Session cookie settings for development (Vite dev server proxy)
+# CSRF / Session cookie settings for development
 # -----------------------------------------------------------
 CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_HTTPONLY = False   # JS must be able to read csrftoken cookie
-CSRF_COOKIE_SECURE = False     # HTTP is fine in local dev
-
-import os
-import dj_database_url
-from pathlib import Path
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-# Safely fetch secret key or fallback locally
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'local-fallback-secret-key')
-
-# Automatically turn off Debug mode in production
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
-
-# Allow Vercel domain naming conventions
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.vercel.app']
-CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app']
-
-# Default Local Database (SQLite)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
-# Override database settings when DATABASE_URL is available (Production)
-if 'DATABASE_URL' in os.environ:
-    DATABASES['default'] = dj_database_url.config(
-        default=os.environ.get('DATABASE_URL'),
-        conn_max_age=600,
-        ssl_require=True
-    )
-
-import os
-
-STATIC_URL = '/static/'
-# This perfectly matches the destination in your vercel.json
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SECURE = not DEBUG  # True in production, False in local dev
