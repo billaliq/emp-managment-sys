@@ -84,12 +84,31 @@ class PositionAdmin(admin.ModelAdmin):
 class EmployeesAdmin(admin.ModelAdmin):
     list_display = (
         'firstname', 'lastname', 'team', 'department', 'position',
-        'status', 'date_hired', 'salary', 'employment_type'
+        'status', 'date_hired', 'salary', 'employment_type', 'max_task_workload'
     )
     list_filter = ('status', 'team', 'department', 'position', 'employment_type', 'work_mode')
     search_fields = ('firstname', 'lastname', 'code', 'email', 'official_email', 'national_id')
     ordering = ('firstname',)
     date_hierarchy = 'date_hired'
+    fieldsets = (
+        ('Personal Information', {
+            'fields': ('firstname', 'lastname', 'father_name', 'dob', 'gender', 'marital_status', 'blood_group', 'photo')
+        }),
+        ('Contact', {
+            'fields': ('email', 'official_email', 'contact_1', 'contact_2', 'emergency_contact', 'emergency_contact_person')
+        }),
+        ('Job Details', {
+            'fields': ('code', 'department', 'position', 'team', 'job_title', 'reporting_to', 'work_mode', 'employment_type', 'date_hired', 'date_permanent', 'status')
+        }),
+        ('AI Task Assignment', {
+            'fields': ('skills', 'max_task_workload'),
+            'description': 'Skills used by the BFS/A* task assignment algorithm.'
+        }),
+        ('Salary', {
+            'fields': ('salary', 'bank_name', 'branch_name', 'account_title', 'account_number'),
+            'classes': ('collapse',)
+        }),
+    )
 
 
 # Team Admin
@@ -524,3 +543,31 @@ class EnrollmentLogAdmin(admin.ModelAdmin):
     readonly_fields = ['started_at', 'completed_at']
     date_hierarchy = 'started_at'
     ordering = ['-started_at']
+
+
+# AI Task Assignment Admin
+from .models import AssignmentTask
+
+@admin.register(AssignmentTask)
+class AssignmentTaskAdmin(admin.ModelAdmin):
+    list_display = ['title', 'priority', 'status', 'assigned_to', 'deadline', 'created_by', 'created_at']
+    list_filter = ['status', 'priority', 'deadline']
+    search_fields = ['title', 'description', 'assigned_to__firstname', 'assigned_to__lastname']
+    readonly_fields = ['created_at', 'updated_at']
+    list_editable = ['status', 'priority']
+    ordering = ['-priority', 'created_at']
+    date_hierarchy = 'created_at'
+    raw_id_fields = ['assigned_to', 'created_by']
+
+    fieldsets = (
+        ('Task Details', {
+            'fields': ('title', 'description', 'required_skills', 'priority', 'deadline')
+        }),
+        ('Assignment', {
+            'fields': ('assigned_to', 'status')
+        }),
+        ('Meta', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )

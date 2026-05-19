@@ -43,3 +43,7 @@ from .device import (
 from .ai import (
     Policy, Complaint, AIChatMessage,
 )
+
+from .tasks import (
+    AssignmentTask,
+)

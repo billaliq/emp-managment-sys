@@ -1,0 +1,245 @@
+{% load static %}
+{% load settings_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignment Result - Employee Information System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="{% static 'js/appearance.js' %}"></script>
+    <style>
+        .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
+        @media(max-width:768px){ .result-grid { grid-template-columns: 1fr; } }
+
+        .result-card {
+            background: var(--bg-card,#fff);
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+            overflow: hidden;
+        }
+        .result-card .card-head {
+            padding: 16px 22px;
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-head.bfs   { background: linear-gradient(90deg,#3498db,#2980b9); color:#fff; }
+        .card-head.astar { background: linear-gradient(90deg,#667eea,#764ba2); color:#fff; }
+
+        .result-table { width:100%; border-collapse:collapse; }
+        .result-table th { background:#f8f9fc; padding:10px 16px; font-size:12px; color:#666; text-align:left; }
+        .result-table td { padding:11px 16px; font-size:13px; border-bottom:1px solid #f5f5f5; }
+        .result-table tr:last-child td { border-bottom:none; }
+
+        .match-bar {
+            height: 6px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 4px;
+        }
+        .match-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg,#667eea,#764ba2); }
+
+        .comparison-card {
+            background: var(--bg-card,#fff);
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+            padding: 28px;
+            margin-bottom: 28px;
+        }
+        .comparison-card h3 { margin-top:0; font-size:18px; }
+        .comparison-table { width:100%; border-collapse:collapse; }
+        .comparison-table th { background:#f8f9fc; padding:12px 18px; font-size:13px; color:#555; font-weight:600; text-align:left; border-bottom:2px solid #eee; }
+        .comparison-table td { padding:12px 18px; font-size:14px; border-bottom:1px solid #f5f5f5; }
+        .comparison-table tr:last-child td { border-bottom:none; }
+        .win-badge {
+            display:inline-block; background:linear-gradient(90deg,#667eea,#764ba2);
+            color:#fff; border-radius:20px; padding:3px 12px; font-size:12px; font-weight:700;
+        }
+
+        .winner-banner {
+            border-radius: 14px;
+            padding: 20px 28px;
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 15px;
+        }
+        .winner-banner.astar { background: linear-gradient(135deg,#667eea,#764ba2); color:#fff; }
+        .winner-banner.bfs   { background: linear-gradient(135deg,#3498db,#2980b9); color:#fff; }
+        .winner-banner.tie   { background: linear-gradient(135deg,#27ae60,#1e8449); color:#fff; }
+        .winner-banner i { font-size: 32px; }
+
+        .error-banner { background:#fde8e8; color:#c0392b; border-radius:12px; padding:14px 20px; margin-bottom:16px; }
+
+        [data-theme="dark"] .result-card,
+        [data-theme="dark"] .comparison-card { background: var(--bg-card); }
+        [data-theme="dark"] .result-table th,
+        [data-theme="dark"] .comparison-table th { background:#2d3748; color:var(--text-light); }
+        [data-theme="dark"] .result-table td,
+        [data-theme="dark"] .comparison-table td { color:var(--text-dark); border-bottom-color:#2d3748; }
+        [data-theme="dark"] .match-bar { background:#4a5568; }
+    </style>
+</head>
+<body>
+    {% include "pages/splash_screen.html" %}
+    <script src="{% static 'js/splash.js' %}"></script>
+    {% include "pages/sidebar.html" %}
+
+    <main class="main-content sidebar-{{ system_settings.sidebar_width|default:'normal' }}" id="mainContent">
+        {% include "pages/navigation.html" %}
+        <div class="page-content">
+
+            <div class="page-header fade-in-up">
+                <h1><i class="fas fa-chart-bar" style="color:#667eea;margin-right:10px;"></i>Assignment Result</h1>
+                <p>BFS vs A* comparison &mdash; A* assignments have been saved to the database.</p>
+            </div>
+
+            {% if result.errors %}
+            {% for err in result.errors %}
+            <div class="error-banner fade-in-up"><i class="fas fa-exclamation-triangle" style="margin-right:8px;"></i>{{ err }}</div>
+            {% endfor %}
+            {% endif %}
+
+            {% with c=result.comparison %}
+            <!-- Winner Banner -->
+            <div class="winner-banner {{ c.winner }} fade-in-up">
+                <i class="fas {% if c.winner == 'astar' %}fa-trophy{% elif c.winner == 'bfs' %}fa-flag-checkered{% else %}fa-equals{% endif %}"></i>
+                <div>
+                    {% if c.winner == 'astar' %}
+                    <strong>A* wins!</strong> A* produced a better skill-matched assignment ({{ c.astar_avg_match }}%) vs BFS ({{ c.bfs_avg_match }}%).
+                    {% elif c.winner == 'bfs' %}
+                    <strong>BFS wins!</strong> BFS found a better skill-matched assignment ({{ c.bfs_avg_match }}%) vs A* ({{ c.astar_avg_match }}%).
+                    {% else %}
+                    <strong>Tie!</strong> Both algorithms produced equal quality assignments ({{ c.astar_avg_match }}% skill match).
+                    {% endif %}
+                    &nbsp;&mdash;&nbsp;<strong>{{ result.applied_count }}</strong> assignment{{ result.applied_count|pluralize }} saved to database.
+                </div>
+            </div>
+
+            <!-- Comparison Table -->
+            <div class="comparison-card fade-in-up">
+                <h3><i class="fas fa-table" style="color:#667eea;margin-right:10px;"></i>BFS vs A* Comparison</h3>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>BFS</th>
+                            <th>A*</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Nodes Explored</td>
+                            <td>{{ c.bfs_nodes }}</td>
+                            <td>{{ c.astar_nodes }}</td>
+                        </tr>
+                        <tr>
+                            <td>Time Taken</td>
+                            <td>{{ c.bfs_time_ms }} ms</td>
+                            <td>{{ c.astar_time_ms }} ms</td>
+                        </tr>
+                        <tr>
+                            <td>Avg Skill Match</td>
+                            <td>{{ c.bfs_avg_match }}%</td>
+                            <td>{{ c.astar_avg_match }}%</td>
+                        </tr>
+                        <tr>
+                            <td>Total Mismatch Cost</td>
+                            <td>—</td>
+                            <td>{{ c.astar_cost }}</td>
+                        </tr>
+                        <tr>
+                            <td>Optimality</td>
+                            <td>First Found</td>
+                            <td>Optimal <span class="win-badge">Best</span></td>
+                        </tr>
+                        <tr>
+                            <td>Heuristic</td>
+                            <td>None</td>
+                            <td>Admissible h(n) = unassigned tasks</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Assignment Detail Cards -->
+            <div class="result-grid fade-in-up">
+
+                <!-- BFS Result -->
+                <div class="result-card">
+                    <div class="card-head bfs">
+                        <i class="fas fa-sitemap"></i> BFS Assignment
+                    </div>
+                    {% if result.bfs_rows %}
+                    <table class="result-table">
+                        <thead>
+                            <tr><th>Task</th><th>Assigned To</th><th>Skill Match</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for row in result.bfs_rows %}
+                            <tr>
+                                <td>{{ row.task_title }}</td>
+                                <td>{{ row.emp_name }}</td>
+                                <td>
+                                    {{ row.skill_match }}%
+                                    <div class="match-bar"><div class="match-fill" style="width:{{ row.skill_match }}%;background:linear-gradient(90deg,#3498db,#2980b9);"></div></div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            <tr style="background:#f8f9fc;">
+                                <td colspan="2" style="font-weight:700;">Average Match</td>
+                                <td style="font-weight:700;">{{ c.bfs_avg_match }}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div style="padding:40px;text-align:center;color:#aaa;"><i class="fas fa-times-circle" style="font-size:36px;margin-bottom:12px;display:block;"></i>No valid assignment found</div>
+                    {% endif %}
+                </div>
+
+                <!-- A* Result -->
+                <div class="result-card">
+                    <div class="card-head astar">
+                        <i class="fas fa-star"></i> A* Assignment <span style="font-size:12px;opacity:.8;margin-left:6px;">(saved to DB)</span>
+                    </div>
+                    {% if result.astar_rows %}
+                    <table class="result-table">
+                        <thead>
+                            <tr><th>Task</th><th>Assigned To</th><th>Skill Match</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for row in result.astar_rows %}
+                            <tr>
+                                <td>{{ row.task_title }}</td>
+                                <td>{{ row.emp_name }}</td>
+                                <td>
+                                    {{ row.skill_match }}%
+                                    <div class="match-bar"><div class="match-fill" style="width:{{ row.skill_match }}%;"></div></div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            <tr style="background:#f8f9fc;">
+                                <td colspan="2" style="font-weight:700;">Average Match</td>
+                                <td style="font-weight:700;">{{ c.astar_avg_match }}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div style="padding:40px;text-align:center;color:#aaa;"><i class="fas fa-times-circle" style="font-size:36px;margin-bottom:12px;display:block;"></i>No valid assignment found</div>
+                    {% endif %}
+                </div>
+
+            </div>
+            {% endwith %}
+
+            <a href="{% url 'task_list' %}" class="btn" style="background:#667eea;color:#fff;border:none;border-radius:10px;padding:12px 28px;font-size:15px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:8px;">
+                <i class="fas fa-arrow-left"></i> Back to Tasks
+            </a>
+
+        </div>
+    </main>
+    <script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>

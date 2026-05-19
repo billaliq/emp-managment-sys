@@ -200,6 +200,9 @@ class Employees(models.Model):
     offer_letter_signed = models.FileField(upload_to='employee_documents/offer_letters/', blank=True, null=True)
     nda_form_signed = models.FileField(upload_to='employee_documents/nda_forms/', blank=True, null=True)
 
+    skills = models.JSONField(default=list, blank=True, help_text="List of skills e.g. ['Python', 'SQL', 'ML']")
+    max_task_workload = models.PositiveIntegerField(default=3, help_text="Maximum number of tasks this employee can be assigned simultaneously")
+
     def clean(self):
         super().clean()
         if self.code and not self.code.isdigit():

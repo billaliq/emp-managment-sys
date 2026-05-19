@@ -54,6 +54,7 @@ from .settings_urls import urlpatterns as settings_urls_list
 from .notifications import urlpatterns as notification_urls
 from .ai import urlpatterns as ai_urls
 from .devices import urlpatterns as device_urls
+from .tasks import urlpatterns as task_urls
 
 # Assemble all URL patterns
 urlpatterns = (
@@ -71,4 +72,5 @@ urlpatterns = (
     + notification_urls
     + ai_urls
     + device_urls
+    + task_urls
 )

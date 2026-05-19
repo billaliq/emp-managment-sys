@@ -119,6 +119,15 @@
                 </a>
             </div>
 
+            <!-- AI Task Assignment (Admin/HR only) -->
+            {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
+            <div class="nav-item">
+                <a href="{% url 'task_list' %}" class="nav-link">
+                    <i class="fas fa-brain"></i> AI Task Assignment
+                </a>
+            </div>
+            {% endif %}
+
             <!-- Device Management (Admin/HR only) -->
             {% if is_admin or user_role == 'admin' or user_role == 'hr' %}
             <div class="nav-item">

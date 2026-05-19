@@ -1,0 +1,369 @@
+{% load static %}
+{% load settings_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Task Assignment - Employee Information System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="{% static 'js/appearance.js' %}"></script>
+    <style>
+        .skill-badge {
+            display: inline-block;
+            background: #667eea22;
+            color: #667eea;
+            border: 1px solid #667eea55;
+            border-radius: 20px;
+            padding: 2px 10px;
+            font-size: 12px;
+            margin: 2px;
+            font-weight: 500;
+        }
+        .priority-badge {
+            display: inline-block;
+            border-radius: 6px;
+            padding: 2px 10px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .priority-5 { background:#fde8e8; color:#c0392b; }
+        .priority-4 { background:#fef0db; color:#e67e22; }
+        .priority-3 { background:#fef9e7; color:#f39c12; }
+        .priority-2 { background:#eafaf1; color:#27ae60; }
+        .priority-1 { background:#eaf0fb; color:#2980b9; }
+
+        .status-badge {
+            display: inline-block;
+            border-radius: 20px;
+            padding: 3px 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-pending     { background:#fef9e7; color:#d35400; }
+        .status-assigned    { background:#eaf0fb; color:#2471a3; }
+        .status-in_progress { background:#eafaf1; color:#1e8449; }
+        .status-completed   { background:#e8f8f5; color:#148f77; }
+        .status-cancelled   { background:#f9f9f9; color:#808080; }
+
+        .ai-run-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            color: #fff;
+            padding: 28px 32px;
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .ai-run-card h2 { margin: 0 0 6px; font-size: 22px; }
+        .ai-run-card p  { margin: 0; opacity: .85; font-size: 14px; }
+        .ai-run-card .btn-white {
+            background: #fff;
+            color: #667eea;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 28px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+        .ai-run-card .btn-white:hover { background:#f0f0f0; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: var(--bg-card, #fff);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            text-align: center;
+        }
+        .stat-card .stat-number { font-size: 28px; font-weight: 700; color: #667eea; }
+        .stat-card .stat-label  { font-size: 12px; color: #888; margin-top: 4px; }
+
+        .create-task-form {
+            background: var(--bg-card, #fff);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 28px;
+        }
+        .create-task-form h3 { margin-top: 0; font-size: 17px; }
+        .form-row { display: flex; gap: 16px; flex-wrap: wrap; }
+        .form-row .form-group { flex: 1; min-width: 180px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #555; }
+        .form-control {
+            width: 100%;
+            border: 1px solid #dde1e7;
+            border-radius: 8px;
+            padding: 9px 13px;
+            font-size: 14px;
+            background: var(--bg-input, #fff);
+            color: var(--text-dark, #222);
+            box-sizing: border-box;
+        }
+        .form-control:focus { outline: none; border-color: #667eea; }
+        .btn-primary {
+            background: #667eea;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-primary:hover { background: #5a6fd6; }
+        .btn-danger {
+            background: #e74c3c;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-danger:hover { background: #c0392b; }
+
+        .tasks-table-card {
+            background: var(--bg-card, #fff);
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+        .tasks-table-card .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 28px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .tasks-table-card .card-header h3 { margin: 0; font-size: 17px; }
+        .table { width: 100%; border-collapse: collapse; }
+        .table th { background: #f8f9fc; padding: 13px 16px; text-align: left; font-size: 13px; color: #666; font-weight: 600; }
+        .table td { padding: 13px 16px; font-size: 14px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+        .table tbody tr:last-child td { border-bottom: none; }
+        .table tbody tr:hover { background: #f8f9fc; }
+
+        .no-tasks { text-align: center; padding: 60px 20px; color: #aaa; }
+        .no-tasks i { font-size: 48px; margin-bottom: 16px; display: block; }
+
+        [data-theme="dark"] .stat-card,
+        [data-theme="dark"] .create-task-form,
+        [data-theme="dark"] .tasks-table-card { background: var(--bg-card); box-shadow: var(--shadow-md); }
+        [data-theme="dark"] .table th { background: #2d3748; color: var(--text-light); }
+        [data-theme="dark"] .table td { color: var(--text-dark); border-bottom-color: #2d3748; }
+        [data-theme="dark"] .table tbody tr:hover { background: #2d3748; }
+        [data-theme="dark"] .form-control { background: #2d3748; border-color: #4a5568; color: var(--text-dark); }
+        [data-theme="dark"] .tasks-table-card .card-header { border-bottom-color: #2d3748; }
+        [data-theme="dark"] .skill-badge { background: #667eea33; color: #a0aec0; border-color: #667eea55; }
+    </style>
+</head>
+<body>
+    {% include "pages/splash_screen.html" %}
+    <script src="{% static 'js/splash.js' %}"></script>
+
+    {% include "pages/sidebar.html" %}
+
+    <main class="main-content sidebar-{{ system_settings.sidebar_width|default:'normal' }}" id="mainContent">
+        {% include "pages/navigation.html" %}
+
+        <div class="page-content">
+            <div class="page-header fade-in-up">
+                <h1><i class="fas fa-robot" style="color:#667eea;margin-right:10px;"></i>AI Task Assignment</h1>
+                <p>Create tasks, define required skills, then let BFS &amp; A* find the optimal employee assignments.</p>
+            </div>
+
+            {% if messages %}
+            <div style="margin-bottom:16px;">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" style="padding:12px 18px;border-radius:10px;margin-bottom:8px;
+                    background:{%if message.tags == 'error'%}#fde8e8{%elif message.tags == 'success'%}#eafaf1{%else%}#eaf0fb{%endif%};
+                    color:{%if message.tags == 'error'%}#c0392b{%elif message.tags == 'success'%}#1e8449{%else%}#2471a3{%endif%};">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- AI Run Banner -->
+            <div class="ai-run-card fade-in-up">
+                <div>
+                    <h2><i class="fas fa-brain" style="margin-right:10px;"></i>Run AI Assignment</h2>
+                    <p>{{ stats.pending }} pending task{{ stats.pending|pluralize }} ready &bull; BFS finds a valid match &bull; A* finds the optimal match</p>
+                </div>
+                <a href="{% url 'run_assignment' %}" class="btn-white">
+                    <i class="fas fa-play-circle"></i> Run BFS &amp; A*
+                </a>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid fade-in-up">
+                <div class="stat-card">
+                    <div class="stat-number">{{ stats.total }}</div>
+                    <div class="stat-label">Total Tasks</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color:#d35400;">{{ stats.pending }}</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color:#2471a3;">{{ stats.assigned }}</div>
+                    <div class="stat-label">Assigned</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color:#1e8449;">{{ stats.in_progress }}</div>
+                    <div class="stat-label">In Progress</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color:#148f77;">{{ stats.completed }}</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+            </div>
+
+            <!-- Create Task Form -->
+            <div class="create-task-form fade-in-up">
+                <h3><i class="fas fa-plus-circle" style="color:#667eea;margin-right:8px;"></i>Create New Task</h3>
+                <form method="post" action="{% url 'task_create' %}">
+                    {% csrf_token %}
+                    <div class="form-row" style="margin-bottom:16px;">
+                        <div class="form-group" style="flex:2;">
+                            <label>Task Title *</label>
+                            <input type="text" name="title" class="form-control" placeholder="e.g. Train ML Model" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Priority</label>
+                            <select name="priority" class="form-control">
+                                {% for val, label in priority_choices %}
+                                <option value="{{ val }}" {% if val == 2 %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Deadline</label>
+                            <input type="date" name="deadline" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-row" style="margin-bottom:16px;">
+                        <div class="form-group" style="flex:2;">
+                            <label>Required Skills <small style="color:#aaa;">(comma-separated, e.g. Python, SQL, ML)</small></label>
+                            <input type="text" name="required_skills" class="form-control" placeholder="Python, SQL, ML">
+                        </div>
+                        <div class="form-group" style="flex:3;">
+                            <label>Description</label>
+                            <input type="text" name="description" class="form-control" placeholder="Brief task description (optional)">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-plus"></i> Create Task
+                    </button>
+                </form>
+            </div>
+
+            <!-- Task Table -->
+            <div class="tasks-table-card fade-in-up">
+                <div class="card-header">
+                    <h3>All Tasks</h3>
+                </div>
+                {% if tasks %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Title</th>
+                            <th>Required Skills</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Assigned To</th>
+                            <th>Deadline</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in tasks %}
+                        <tr>
+                            <td style="color:#aaa;font-size:13px;">{{ task.pk }}</td>
+                            <td>
+                                <strong>{{ task.title }}</strong>
+                                {% if task.description %}
+                                <br><small style="color:#aaa;">{{ task.description|truncatechars:60 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% for skill in task.required_skills %}
+                                <span class="skill-badge">{{ skill }}</span>
+                                {% empty %}
+                                <span style="color:#ccc;">—</span>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                <span class="priority-badge priority-{{ task.priority }}">
+                                    {{ task.get_priority_label }}
+                                </span>
+                            </td>
+                            <td>
+                                <form method="post" action="{% url 'task_update_status' task.pk %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <select name="status" class="form-control" style="padding:4px 8px;font-size:12px;width:auto;"
+                                        onchange="this.form.submit()">
+                                        {% for val, label in status_choices %}
+                                        <option value="{{ val }}" {% if task.status == val %}selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </form>
+                            </td>
+                            <td>
+                                {% if task.assigned_to %}
+                                <span style="font-weight:600;">{{ task.assigned_to.firstname }} {{ task.assigned_to.lastname }}</span>
+                                {% else %}
+                                <span style="color:#ccc;">Unassigned</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task.deadline %}
+                                {{ task.deadline }}
+                                {% else %}
+                                <span style="color:#ccc;">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form method="post" action="{% url 'task_delete' task.pk %}"
+                                    onsubmit="return confirm('Delete task \'{{ task.title }}\'?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-danger" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="no-tasks">
+                    <i class="fas fa-clipboard-list"></i>
+                    <p>No tasks yet. Create your first task above.</p>
+                </div>
+                {% endif %}
+            </div>
+
+        </div><!-- .page-content -->
+    </main>
+
+    <script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>
