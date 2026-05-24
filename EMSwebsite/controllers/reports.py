@@ -623,19 +623,10 @@ def generate_report(request):
             }
             report.save()
 
-            # Generate report based on format
-            if format_type == 'pdf':
-                filename = f"report_{report.id}.pdf"
-                file_content = generate_pdf_report(report, data)
-                report.file_path.save(filename, ContentFile(file_content))
-            elif format_type == 'excel':
-                filename = f"report_{report.id}.xlsx"
-                file_content = generate_excel_report(report, data)
-                report.file_path.save(filename, ContentFile(file_content))
-            elif format_type == 'csv':
-                filename = f"report_{report.id}.csv"
-                file_content = generate_csv_report(report, data)
-                report.file_path.save(filename, ContentFile(file_content))
+            # NOTE: We do NOT save files to disk because Vercel has a
+            # read-only filesystem.  The report data is already persisted in
+            # report.report_data (JSONField) and files are generated on-the-fly
+            # when the user downloads via the download_report view.
 
             # Mark as completed
             report.mark_completed()
@@ -891,18 +882,38 @@ def view_report(request, report_id):
 
 @login_required
 def download_report(request, report_id):
-    """Download report file"""
+    """Download report file — generated on-the-fly from stored report_data"""
     report = get_object_or_404(Report, id=report_id)
 
-    if not report.file_path or not report.file_path.name:
-        return JsonResponse({'success': False, 'message': 'Report file not found'})
+    # Check access - employees can only download their own reports
+    user_role = get_user_role(request)
+    if user_role == 'employee' and report.generated_by != request.user:
+        return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
+
+    data = report.report_data.get('data', []) if report.report_data else []
 
     try:
-        response = HttpResponse(report.file_path.read(), content_type='application/octet-stream')
-        filename = f"{report.report_name}.{report.format}"
+        fmt = report.format or 'csv'
+        safe_name = re.sub(r'[^\w\s\-]', '', report.report_name).strip().replace(' ', '_')
+
+        if fmt == 'pdf':
+            file_content = generate_pdf_report(report, data)
+            content_type = 'application/pdf'
+            filename = f"{safe_name}.pdf"
+        elif fmt == 'excel':
+            file_content = generate_excel_report(report, data)
+            content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            filename = f"{safe_name}.xlsx"
+        else:  # csv
+            file_content = generate_csv_report(report, data)
+            content_type = 'text/csv'
+            filename = f"{safe_name}.csv"
+
+        response = HttpResponse(file_content, content_type=content_type)
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
     except Exception as e:
+        logger.exception('Error generating download for report %s', report_id)
         return JsonResponse({'success': False, 'message': f'Error downloading file: {str(e)}'})
 
 @login_required
@@ -927,14 +938,13 @@ def delete_report(request, report_id):
                 'message': 'You do not have permission to delete this report.'
             }, status=403)
 
-        # Delete file if exists
-        if report.file_path:
+        # Delete associated file if one exists on disk (legacy reports)
+        if report.file_path and report.file_path.name:
             try:
                 if default_storage.exists(report.file_path.name):
                     default_storage.delete(report.file_path.name)
-            except Exception as file_error:
-                # Log but don't fail if file deletion fails
-                print(f"Warning: Could not delete report file: {file_error}")
+            except Exception:
+                pass  # File may not exist on Vercel's read-only FS
 
         report.delete()
 
